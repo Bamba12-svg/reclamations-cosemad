@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { db } from "@/server/db";
 
 export const dynamic = "force-dynamic";
@@ -101,6 +102,10 @@ export default async function Accueil() {
           {etat.ok && ` · ${etat.utilisateurs} utilisateurs`}
         </span>
       </div>
+
+      <p className="m-0 text-[0.9375rem]">
+        <Link href="/bo">Espace collaborateurs</Link>
+      </p>
 
       {vide && (
         <p className="m-0 text-[0.9375rem] text-encre-3">

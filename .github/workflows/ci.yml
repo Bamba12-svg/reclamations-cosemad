@@ -32,6 +32,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://cosemad:cosemad@localhost:5432/reclamations?schema=public
       NEXT_TELEMETRY_DISABLED: "1"
+      AUTH_SECRET: ci-uniquement-cle-de-test-non-secrete-0123456789
+      MODE_DEMO: "1"
 
     steps:
       - uses: actions/checkout@v4

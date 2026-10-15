@@ -76,6 +76,20 @@ Mot de passe de tous les comptes : `demo2026`
 
 Les autres responsables et membres d'équipe suivent le même modèle : `prenom.nom@domaine-de-la-societe`.
 
+### Espace collaborateurs
+
+Ajoutez une clé de session à votre `.env` (une seule fois) :
+
+```powershell
+$cle = node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+Add-Content .env "AUTH_SECRET=`"$cle`""
+Add-Content .env 'MODE_DEMO="1"'
+```
+
+Puis ouvrez <http://localhost:3000/bo> et cliquez sur « Remplir avec le compte de démonstration ».
+5 erreurs de mot de passe en 15 minutes bloquent le compte pendant 15 minutes ; chaque connexion,
+échec et déconnexion est inscrit au journal.
+
 ### Commandes utiles
 
 | Commande | Rôle |
