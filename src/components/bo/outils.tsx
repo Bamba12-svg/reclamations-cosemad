@@ -68,19 +68,25 @@ export function useOperation() {
   const annoncer = useToast();
   const [enCours, demarrer] = useTransition();
   const lancer = useCallback(
-    (operation: () => Promise<Resultat>, options: { succes?: string | false; echec?: () => void; reussite?: () => void } = {}) =>
+    <T extends Resultat>(
+      operation: () => Promise<T | undefined>,
+      options: { succes?: string | false; echec?: () => void; reussite?: (r: Extract<T, { ok: true }>) => void } = {},
+    ) =>
       demarrer(async () => {
         try {
           const r = await operation();
+          if (!r) return; // l'action a redirigé (ex. reconnexion) : la navigation est en cours
           if (r.ok) {
             const texte = options.succes === false ? null : (options.succes ?? r.message);
             if (texte) annoncer(texte);
-            options.reussite?.();
+            options.reussite?.(r as Extract<T, { ok: true }>);
           } else {
             annoncer(r.erreur, "erreur");
             options.echec?.();
           }
-        } catch {
+        } catch (e) {
+          // Les redirections de Next.js passent par une exception : on la laisse faire son travail.
+          if (e && typeof e === "object" && "digest" in e && String(e.digest).startsWith("NEXT_REDIRECT")) throw e;
           annoncer("Connexion au serveur impossible. Vérifiez le réseau et réessayez.", "erreur");
           options.echec?.();
         }
