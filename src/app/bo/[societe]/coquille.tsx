@@ -277,7 +277,7 @@ export function Coquille({ children, societe, societes, utilisateur, compteurs, 
                     <p className="m-0 px-3 pt-2 pb-1 text-[0.8125rem] font-semibold text-encre-3">Simuler un profil (démonstration)</p>
                     <div className="flex max-h-[min(22rem,55vh)] flex-col overflow-auto">
                       {profils.map((p) => (
-                        <form key={p.id} action={() => simulerProfil(p.id, societe.slug)} onSubmit={() => setProfilOuvert(false)}>
+                        <form key={p.id} action={() => simulerProfil(p.id, societe.slug, chemin)} onSubmit={() => setProfilOuvert(false)}>
                           <button
                             type="submit"
                             aria-current={p.id === utilisateur.id ? "true" : undefined}

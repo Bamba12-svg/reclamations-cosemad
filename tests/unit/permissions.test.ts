@@ -5,7 +5,14 @@ import {
   aLaPermission,
   exigerSurReclamation,
   filtreVisibilite,
+  peutAjouterPiece,
+  peutCloturer,
+  peutCommenter,
   peutModifierAction,
+  peutQualifier,
+  peutRepondre,
+  peutTraiter,
+  peutViser,
   peutVoir,
   type Acteur,
   type Permission,
@@ -92,5 +99,53 @@ describe("contrôles sur une réclamation", () => {
     expect(peutModifierAction(lamineDiop, recOxy, { responsableId: "lamine" }, "tout")).toBe(false);
     expect(peutModifierAction(lamineDiop, recOxy, { responsableId: "cheikh" }, "statut")).toBe(false);
     expect(peutModifierAction(cheikhSy, recOxy, { responsableId: "lamine" }, "tout")).toBe(true);
+  });
+});
+
+describe("fiche : qui peut faire quoi", () => {
+  const cloturee = { ...recOxy, clotureLe: new Date("2026-10-10") };
+
+  it("qualifier : QHSE et responsable de l'activité, pas un membre d'équipe ni la DC", () => {
+    expect(peutQualifier(groupe("QHSE"), recOxy)).toBe(true);
+    expect(peutQualifier(cheikhSy, recOxy)).toBe(true);
+    expect(peutQualifier(lamineDiop, recOxy)).toBe(false);
+    expect(peutQualifier(groupe("DIRECTION_COMMERCIALE"), recOxy)).toBe(false);
+    expect(peutQualifier(groupe("QHSE"), cloturee)).toBe(false);
+  });
+
+  it("traiter et répondre : QHSE, responsable de la réclamation ou de l'activité", () => {
+    const aida: Acteur = { ...lamineDiop, id: "aida", activiteIds: [DIA] };
+    expect(peutTraiter(groupe("QHSE"), recOxy)).toBe(true);
+    expect(peutTraiter(cheikhSy, recOxy)).toBe(true);
+    expect(peutTraiter(aida, recDialyse)).toBe(true); // responsable de la réclamation
+    expect(peutTraiter(lamineDiop, recOxy)).toBe(false); // ne gère que ses propres actions
+    expect(peutRepondre(groupe("AGENT_ACCUEIL"), recOxy)).toBe(false);
+    expect(peutRepondre(groupe("DIRECTION_GENERALE"), recOxy)).toBe(false);
+    expect(peutTraiter(cheikhSy, cloturee)).toBe(false);
+  });
+
+  it("visas : chacun le sien ; clôture : QHSE seulement", () => {
+    expect(peutViser(groupe("DIRECTION_COMMERCIALE"), recOxy, "DIRECTION_COMMERCIALE")).toBe(true);
+    expect(peutViser(groupe("DIRECTION_COMMERCIALE"), recOxy, "QHSE")).toBe(false);
+    expect(peutViser(groupe("QHSE"), recOxy, "QHSE")).toBe(true);
+    expect(peutViser(groupe("QHSE"), recOxy, "DIRECTION_COMMERCIALE")).toBe(false);
+    expect(peutCloturer(groupe("QHSE"), recOxy)).toBe(true);
+    expect(peutCloturer(cheikhSy, recOxy)).toBe(false);
+    expect(peutCloturer(groupe("DIRECTION_GENERALE"), recOxy)).toBe(false);
+  });
+
+  it("direction générale : lecture seule", () => {
+    const dg = groupe("DIRECTION_GENERALE");
+    expect([peutQualifier, peutTraiter, peutRepondre, peutAjouterPiece, peutCommenter, peutCloturer].map((f) => f(dg, recOxy))).toEqual([false, false, false, false, false, false]);
+  });
+
+  it("commentaires encore possibles après clôture, pièces jointes non", () => {
+    expect(peutCommenter(groupe("QHSE"), cloturee)).toBe(true);
+    expect(peutAjouterPiece(groupe("QHSE"), cloturee)).toBe(false);
+  });
+
+  it("hors périmètre : rien", () => {
+    expect(peutCommenter(cheikhSy, recSonerco)).toBe(false);
+    expect(peutTraiter(cheikhSy, recSonerco)).toBe(false);
   });
 });

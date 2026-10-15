@@ -14,10 +14,12 @@ export async function seDeconnecter(): Promise<void> {
 }
 
 /** Mode démonstration : se reconnecter sous un autre profil (menu « Simuler un profil »). */
-export async function simulerProfil(userId: string, slug: string): Promise<void> {
+export async function simulerProfil(userId: string, slug: string, retour?: string): Promise<void> {
   if (!modeDemo()) throw new Error("Mode démonstration désactivé.");
   if (!(await acteurCourant())) throw new Error("Session expirée.");
-  await signIn("demo", { userId, redirectTo: `/bo/${slug}` });
+  // Retour sur la page en cours (ex. la fiche) : uniquement un chemin interne de la même société.
+  const destination = retour && retour.startsWith(`/bo/${slug}/`) && /^[\w/-]+$/.test(retour) ? retour : `/bo/${slug}`;
+  await signIn("demo", { userId, redirectTo: destination });
 }
 
 /** Mémorise la société choisie (préselectionnée à la prochaine connexion). */

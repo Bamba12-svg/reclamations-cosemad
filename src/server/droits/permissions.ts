@@ -121,6 +121,55 @@ export function exigerSurReclamation(acteur: Acteur, r: ReclamationPourDroits, p
   }
 }
 
+const dirigeActivite = (acteur: Acteur, r: ReclamationPourDroits) => acteur.activitesDirigeesIds.includes(r.activiteId);
+
+/**
+ * Qualifier (désigner le responsable de traitement, marquer « récurrent ») : le QHSE, et le
+ * responsable de l'activité concernée pour son équipe. Jamais sur une fiche clôturée.
+ */
+export function peutQualifier(acteur: Acteur, r: ReclamationPourDroits): boolean {
+  if (!peutVoir(acteur, r) || r.clotureLe) return false;
+  return aLaPermission(acteur, "reclamation.qualifier") || (acteur.role === "RESPONSABLE_TRAITEMENT" && dirigeActivite(acteur, r));
+}
+
+/**
+ * Traiter (ajouter des actions, évaluer leur efficacité, causes racines) : le QHSE, le responsable
+ * de la réclamation et le responsable de l'activité.
+ */
+export function peutTraiter(acteur: Acteur, r: ReclamationPourDroits): boolean {
+  if (!peutVoir(acteur, r) || r.clotureLe) return false;
+  if (acteur.role === "QHSE") return true;
+  return aLaPermission(acteur, "reclamation.traiter") && (r.responsableId === acteur.id || dirigeActivite(acteur, r));
+}
+
+/** Répondre au client : mêmes personnes que le traitement. */
+export function peutRepondre(acteur: Acteur, r: ReclamationPourDroits): boolean {
+  return peutTraiter(acteur, r) && aLaPermission(acteur, "reclamation.repondre");
+}
+
+export function peutAjouterPiece(acteur: Acteur, r: ReclamationPourDroits): boolean {
+  return peutVoir(acteur, r) && !r.clotureLe && aLaPermission(acteur, "piece.ajouter");
+}
+
+/** Les commentaires internes restent possibles après la clôture (suivi, remarques d'audit). */
+export function peutCommenter(acteur: Acteur, r: ReclamationPourDroits): boolean {
+  return peutVoir(acteur, r) && aLaPermission(acteur, "commentaire.ajouter");
+}
+
+/**
+ * Le rôle autorise-t-il ce visa ? Chaque visa engage SA fonction : le QHSE, qui a toutes les autres
+ * permissions, ne peut pas viser à la place de la Direction Commerciale.
+ * (Les conditions de la procédure sont vérifiées par blocageVisa.)
+ */
+export function peutViser(acteur: Acteur, r: ReclamationPourDroits, type: "DIRECTION_COMMERCIALE" | "QHSE"): boolean {
+  return peutVoir(acteur, r) && !r.clotureLe && acteur.role === type && aLaPermission(acteur, type === "QHSE" ? "reclamation.viser.qhse" : "reclamation.viser.dc");
+}
+
+/** Seul le Service QHSE clôture (décision validée). */
+export function peutCloturer(acteur: Acteur, r: ReclamationPourDroits): boolean {
+  return peutVoir(acteur, r) && !r.clotureLe && aLaPermission(acteur, "reclamation.cloturer");
+}
+
 /**
  * Modifier une action : le QHSE, le responsable de la réclamation et le responsable de l'activité
  * peuvent tout modifier ; la personne à qui l'action est confiée peut changer son statut
@@ -135,6 +184,6 @@ export function peutModifierAction(
   if (!peutVoir(acteur, r) || r.clotureLe) return false;
   if (acteur.role === "QHSE") return true;
   if (!aLaPermission(acteur, "reclamation.traiter")) return false;
-  if (r.responsableId === acteur.id || acteur.activitesDirigeesIds.includes(r.activiteId)) return true;
+  if (r.responsableId === acteur.id || dirigeActivite(acteur, r)) return true;
   return champ === "statut" && action.responsableId === acteur.id;
 }
