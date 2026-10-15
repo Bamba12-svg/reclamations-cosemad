@@ -1,29 +1,27 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EcranAVenir, EnTetePage } from "@/components/bo/en-tete-page";
-import { db } from "@/server/db";
-import { peutVoir } from "@/server/droits/permissions";
+import { FeuillePr06 } from "@/components/bo/feuille-pr06";
+import { donneesPr06 } from "@/server/fiche/pr06";
 import { exigerSociete } from "@/server/session";
+import { BarreApercu } from "./barre";
 
-export const metadata: Metadata = { title: "Fiche PR06-ENR-01" };
+export async function generateMetadata({ params }: { params: Promise<{ numero: string }> }): Promise<Metadata> {
+  return { title: `Fiche PR06-ENR-01 · ${decodeURIComponent((await params).numero).toUpperCase()}` };
+}
 
-export default async function FichePr06({ params }: { params: Promise<{ societe: string; numero: string }> }) {
+export default async function ApercuPr06({ params }: { params: Promise<{ societe: string; numero: string }> }) {
   const { societe: slug, numero: brut } = await params;
-  const numero = decodeURIComponent(brut).toUpperCase();
   const { acteur, societe } = await exigerSociete(slug);
-  const r = await db.reclamation.findUnique({
-    where: { numero },
-    select: { numero: true, societeId: true, activiteId: true, responsableId: true, clotureLe: true, actions: { select: { responsableId: true } } },
-  });
-  if (!r || r.societeId !== societe.id || !peutVoir(acteur, r)) notFound();
+  const d = await donneesPr06(acteur, societe.id, decodeURIComponent(brut).toUpperCase());
+  if (!d) notFound();
+  const fiche = `/bo/${slug}/reclamations/${d.numero}`;
   return (
-    <section className="flex flex-col gap-5">
-      <Link href={`/bo/${slug}/reclamations/${r.numero}`} className="self-start font-medium">
-        ← Retour à la fiche {r.numero}
-      </Link>
-      <EnTetePage titre={`Fiche PR06-ENR-01 · ${r.numero}`} />
-      <EcranAVenir etape={9} contenu="Aperçu et export PDF de la fiche « Traitement des réclamations clients » au format du formulaire papier PR06-ENR-01." />
+    <section className="flex flex-col items-center gap-5">
+      <BarreApercu retour={fiche} numero={d.numero} pdf={`${fiche}/pr06/pdf`} />
+      {/* La feuille garde sa largeur A4 : sur petit écran, on la fait défiler horizontalement. */}
+      <div data-print-wrap="" className="flex w-full justify-center overflow-x-auto pb-4" tabIndex={0} aria-label="Aperçu de la fiche (défilement horizontal sur petit écran)">
+        <FeuillePr06 d={d} />
+      </div>
     </section>
   );
 }

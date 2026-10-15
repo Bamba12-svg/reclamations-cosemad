@@ -103,3 +103,30 @@
     transform: none;
   }
 }
+
+/*
+ * Impression de la fiche PR06-ENR-01 (bouton « Imprimer » de l'aperçu) : menu et en-tête sont déjà
+ * masqués (print:hidden) ; on retire ici la barre d'outils, les marges et l'ombre pour que la feuille
+ * A4 occupe exactement la page.
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  [data-print-hide] {
+    display: none !important;
+  }
+  #bo-main:has([data-print-page]) {
+    max-width: none;
+    padding: 0 !important;
+  }
+  [data-print-wrap] {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  [data-print-page] {
+    box-shadow: none !important;
+    min-height: 296mm !important; /* 1 mm de marge contre les arrondis : jamais de page blanche en trop */
+  }
+}
