@@ -50,6 +50,32 @@ npm run dev
 
 Ouvrez <http://localhost:3000> et <http://localhost:3000/api/sante>.
 
+### Données de démonstration
+
+```powershell
+npm run db:seed
+```
+
+Charge les 3 sociétés, leurs activités et équipes, 59 utilisateurs et 181 réclamations, identiques aux maquettes
+(Carrefour Médical 74, Sonerco 49, FLS 58). Les dates sont décalées pour que le « jour de la maquette » (02/10/2026)
+tombe le jour du chargement : les statuts (en cours, en retard, à viser…) restent les mêmes.
+**Le script vide la base avant de la remplir** et refuse de tourner en production.
+
+Mot de passe de tous les comptes : `demo2026`
+
+| Compte | Rôle | Sociétés |
+|---|---|---|
+| fatou.sarr@cosemad.sn | Service QHSE | toutes |
+| omar.sankhare@cosemad.sn | Service QHSE | toutes |
+| ibrahima.fall@cosemad.sn | Direction Commerciale | toutes |
+| awa.ba@cosemad.sn | Agent d'accueil | toutes |
+| mariama.kane@cosemad.sn | Direction générale | toutes |
+| cheikh.sy@carrefourmedical.sn | Responsable de traitement (Oxygène médical) | Carrefour Médical |
+| modou.diagne@sonerco.sn | Responsable de traitement (Énergie) | Sonerco |
+| mor.talla.sow@fls.sn | Responsable de traitement (Commandes et livraison) | FLS |
+
+Les autres responsables et membres d'équipe suivent le même modèle : `prenom.nom@domaine-de-la-societe`.
+
 ### Commandes utiles
 
 | Commande | Rôle |
@@ -57,6 +83,8 @@ Ouvrez <http://localhost:3000> et <http://localhost:3000/api/sante>.
 | `npm run dev` | serveur de développement |
 | `npm run verifier` | TypeScript + ESLint + build (à lancer avant chaque commit) |
 | `npm run db:migrate -- --name <nom>` | nouvelle migration après une modification de `prisma/schema.prisma` |
+| `npm run db:seed` | recharger les données de démonstration |
+| `npm run db:reset` | tout effacer, réappliquer les migrations et recharger la démonstration |
 | `npm run db:studio` | explorer la base dans le navigateur |
 
 ## Intégration continue

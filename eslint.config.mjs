@@ -12,5 +12,10 @@ export default defineConfig([
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
+  {
+    // Scripts en ligne de commande (seed…) : l'affichage console est leur sortie normale.
+    files: ["prisma/**/*.ts"],
+    rules: { "no-console": "off" },
+  },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/generated/**"]),
 ]);
