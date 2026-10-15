@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { VueFiche } from "@/server/fiche/lecture";
 import { actionAjouterPieces, actionCommenter } from "./actions";
-import { BOUTON_SECONDAIRE, CarteLaterale, Pastille, useOperation, useToast } from "./outils";
+import { BOUTON_SECONDAIRE, CarteLaterale, Pastille, useOperation, useToast } from "@/components/bo/outils";
 
 const TAILLE_MAX = 10 * 1024 * 1024;
 

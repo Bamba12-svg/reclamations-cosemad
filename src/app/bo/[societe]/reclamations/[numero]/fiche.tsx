@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BadgeStatut } from "@/components/bo/badge-statut";
 import { Icone } from "@/components/icone";
@@ -10,23 +11,38 @@ import type { VueFiche, VueVisa } from "@/server/fiche/lecture";
 import { simulerProfil } from "../../../actions";
 import { actionCauses, actionCloturer, actionRecurrent, actionRepondre, actionViser } from "./actions";
 import { Colonne } from "./colonne";
-import { BOUTON_LIEN, BOUTON_PRINCIPAL, BOUTON_SECONDAIRE, Carte, FournisseurToast, Pastille, TitreSection, useOperation, useToast } from "./outils";
+import { BOUTON_LIEN, BOUTON_PRINCIPAL, BOUTON_SECONDAIRE, Carte, FournisseurToast, Pastille, TitreSection, useOperation, useToast } from "@/components/bo/outils";
 import { SectionTraitement } from "./traitement";
 
 const LONGUEUR_MIN_REPONSE = 20;
 const LONGUEUR_MAX_REPONSE = 600;
 
-export function Fiche({ vue, slug }: { vue: VueFiche; slug: string }) {
+export interface Confirmation {
+  sms: string;
+  email: string | null;
+  adresse: string | null;
+}
+
+export function Fiche({ vue, slug, confirmation }: { vue: VueFiche; slug: string; confirmation: Confirmation | null }) {
   return (
     <FournisseurToast>
-      <ContenuFiche vue={vue} slug={slug} />
+      <ContenuFiche vue={vue} slug={slug} confirmation={confirmation} />
     </FournisseurToast>
   );
 }
 
-function ContenuFiche({ vue, slug }: { vue: VueFiche; slug: string }) {
+function ContenuFiche({ vue, slug, confirmation }: { vue: VueFiche; slug: string; confirmation: Confirmation | null }) {
   const lectureSeule = !!vue.cloturee;
   const base = `/bo/${slug}/reclamations`;
+  const routeur = useRouter();
+  const annoncer = useToast();
+  const annonce = useRef(false);
+  useEffect(() => {
+    if (confirmation && !annonce.current) {
+      annonce.current = true;
+      annoncer(`Réclamation ${vue.numero} enregistrée. Confirmation envoyée au client.`);
+    }
+  }, [confirmation, annoncer, vue.numero]);
   return (
     <div className="flex flex-col gap-5">
       <Link
@@ -36,6 +52,42 @@ function ContenuFiche({ vue, slug }: { vue: VueFiche; slug: string }) {
         <Icone nom="chevronGauche" taille={18} />
         Tableau de suivi
       </Link>
+
+      {confirmation && (
+        <div role="status" className="flex flex-col gap-3 rounded-carte border border-traitee-bord bg-traitee-fond px-5 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <p className="m-0 flex items-center gap-2 font-semibold text-[#05603A]">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              Confirmation envoyée au client
+            </p>
+            <button
+              type="button"
+              aria-label="Fermer"
+              onClick={() => routeur.replace(`${base}/${vue.numero}`, { scroll: false })}
+              className="grid size-11 cursor-pointer place-items-center rounded-lg border-0 bg-transparent text-[#05603A] hover:bg-[#D1FADF]"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[0.8125rem] font-semibold text-encre-2">SMS au {vue.client.telephone}</span>
+              <p className="m-0 rounded-[0.75rem_0.75rem_0.75rem_0.25rem] bg-surface px-3.5 py-3 text-sm">{confirmation.sms}</p>
+            </div>
+            {confirmation.email && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[0.8125rem] font-semibold text-encre-2">E-mail à {confirmation.adresse}</span>
+                <p className="m-0 rounded-champ bg-surface px-3.5 py-3 text-sm whitespace-pre-wrap">{confirmation.email}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <EnTete vue={vue} slug={slug} />
       <Frise vue={vue} />

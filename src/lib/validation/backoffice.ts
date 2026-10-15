@@ -1,6 +1,7 @@
 /** Validation des formulaires du back-office — revalidés côté serveur dans chaque action. */
 import { z } from "zod";
 import { estJourIso } from "@/lib/dates";
+import { ORIGINES } from "@/lib/libelles";
 import { variablesInconnues } from "@/lib/modeles";
 import {
   emailFacultatif,
@@ -16,7 +17,7 @@ import {
 export const schemaNouvelleReclamation = z
   .object({
     mode: modeTransmission,
-    origine: z.string().trim().min(1).max(80),
+    origine: z.enum(ORIGINES, { error: "Choisissez l'origine de la réclamation." }),
     dateReception: jour,
     heureReception: heure,
     responsableId: identifiant.nullable().default(null),

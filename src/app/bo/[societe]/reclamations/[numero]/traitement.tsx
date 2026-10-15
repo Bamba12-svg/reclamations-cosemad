@@ -7,7 +7,7 @@ import { LIBELLE_STATUT_ACTION } from "@/lib/libelles";
 import type { VueAction, VueFiche } from "@/server/fiche/lecture";
 import type { ModificationAction } from "@/server/fiche/operations";
 import { actionAffecter, actionAjouterAction, actionModifierAction } from "./actions";
-import { BOUTON_PRINCIPAL, BOUTON_SECONDAIRE, Carte, CHAMP, TitreSection, useOperation } from "./outils";
+import { BOUTON_PRINCIPAL, BOUTON_SECONDAIRE, Carte, CHAMP, TitreSection, useOperation } from "@/components/bo/outils";
 
 // Colonnes du tableau des actions (maquette B4) : écrites en entier pour que Tailwind les voie.
 const GRILLE = "grid grid-cols-[2.25rem_minmax(13rem,2fr)_9.5rem_9.5rem_8.5rem_minmax(12rem,1.6fr)_7.5rem] gap-2";
