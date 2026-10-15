@@ -43,7 +43,9 @@ export function PiedPortail({ slug, nom, telephone }: { slug: string; nom: strin
     <footer className="border-t border-bord bg-surface">
       <div className="mx-auto flex max-w-160 flex-wrap justify-between gap-x-6 gap-y-2 px-[clamp(1rem,4vw,1.5rem)] py-5 text-[0.8125rem] text-encre-3">
         <span>
-          {nom} · Groupe COSEMAD · Dakar, Sénégal · <a href={`tel:${telephone.replace(/\s/g, "")}`}>{telephone}</a>
+          {nom} · Groupe COSEMAD · Dakar, Sénégal · <a href={`tel:${telephone.replace(/\s/g, "")}`} className="underline underline-offset-2">
+            {telephone}
+          </a>
         </span>
         <Link href={`/bo/connexion?societe=${slug}`}>Espace collaborateurs</Link>
       </div>

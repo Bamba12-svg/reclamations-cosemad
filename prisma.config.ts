@@ -8,7 +8,9 @@ export default defineConfig({
     seed: "tsx prisma/seed/index.ts",
   },
   datasource: {
-    // Définie dans .env (local) ou dans les variables de l'hébergeur (Neon en ligne).
-    url: process.env.DATABASE_URL ?? "",
+    // Commandes Prisma (migrations) : connexion DIRECTE. Avec Neon, l'application utilise la connexion
+    // « pooled » (DATABASE_URL) et les migrations la connexion directe (DATABASE_URL_UNPOOLED).
+    // En local, une seule variable suffit.
+    url: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL || "",
   },
 });

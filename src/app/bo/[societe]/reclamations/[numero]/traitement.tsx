@@ -79,7 +79,8 @@ export function SectionTraitement({ vue, slug, lectureSeule }: Props) {
         {vue.activite.equipes && <span className="text-encre-3">Équipes : {vue.activite.equipes}</span>}
       </div>
 
-      <div className="relative overflow-x-auto rounded-champ border border-bord" tabIndex={-1}>
+      {/* Zone défilante atteignable au clavier (flèches gauche/droite) même quand la fiche est en lecture seule. */}
+      <div className="relative overflow-x-auto rounded-champ border border-bord" tabIndex={0} role="region" aria-label="Tableau des actions (défilement horizontal)">
         <div role="table" aria-label="Actions" aria-busy={enCours} className="min-w-[62rem] text-sm">
           <div role="row" className={`${GRILLE} border-b border-bord bg-fond px-3 py-2.5 text-xs font-semibold tracking-[0.03em] text-encre-3 uppercase`}>
             <span role="columnheader">#</span>

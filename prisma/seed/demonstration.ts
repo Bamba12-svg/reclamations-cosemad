@@ -20,7 +20,7 @@ import type { DonneesMaquette, ModeMaquette, ReclamationMaquette, SocieteMaquett
 
 const MOT_DE_PASSE_DEMO = "demo2026";
 
-const META_SOCIETES = {
+export const META_SOCIETES = {
   CM: { slug: "carrefour-medical", logo: "/logos/carrefour-medical.png", ordre: 1 },
   SON: { slug: "sonerco", logo: "/logos/sonerco.png", ordre: 2 },
   FLS: { slug: "fls", logo: "/logos/fls.png", ordre: 3 },
@@ -28,7 +28,7 @@ const META_SOCIETES = {
 
 /** Jours fériés à date fixe au Sénégal. Les fêtes religieuses (Korité, Tabaski, Tamkharit,
  *  Maouloud, Magal, lundi de Pâques, Ascension, Pentecôte) changent chaque année : le QHSE les saisit. */
-const FERIES_FIXES = [
+export const FERIES_FIXES = [
   ["01-01", "Jour de l'an"],
   ["04-04", "Fête de l'Indépendance"],
   ["05-01", "Fête du Travail"],

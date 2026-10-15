@@ -10,7 +10,7 @@ portail client public (dépôt et suivi) et back-office des collaborateurs (proc
 | Next.js (App Router) + React | 16.4.1 · 19.3.1 |
 | TypeScript (strict) | 5.9.3 |
 | Tailwind CSS | 4.3.3 |
-| PostgreSQL | 18 en local, Neon en ligne |
+| PostgreSQL | 17 ou 18 en local, Neon en ligne |
 | Prisma + @prisma/adapter-pg | 7.10.0 |
 | ESLint | 9.39.5 |
 | Node.js | 22.18 ou plus (CI : 22, production Infomaniak : 24) |
@@ -105,7 +105,9 @@ Puis ouvrez <http://localhost:3000/bo> et cliquez sur « Remplir avec le compte 
 | `npm run verifier` | TypeScript + ESLint + tests + build (à lancer avant chaque commit) |
 | `npm test` | tests automatiques (règles métier, droits, validation, base de données) |
 | `npm run db:migrate -- --name <nom>` | nouvelle migration après une modification de `prisma/schema.prisma` |
-| `npm run db:seed` | recharger les données de démonstration |
+| `npm run db:seed` | recharger les données de démonstration (vide la base) |
+| `npm run db:deploy` | appliquer les migrations sur une base existante (production) |
+| `npm run db:init` | initialiser une base de production vide : sociétés, activités, premier compte QHSE |
 | `npm run db:reset` | tout effacer, réappliquer les migrations et recharger la démonstration |
 | `npm run db:studio` | explorer la base dans le navigateur |
 
@@ -127,10 +129,18 @@ Les tests de `tests/integration` utilisent la base de `.env` : ils créent leurs
 sur une base vierge, vérifie qu'elles correspondent au schéma, charge les données de démonstration, puis lance
 TypeScript, ESLint, les tests et le build.
 
+## Mise en ligne, accessibilité, sécurité
+
+- [docs/MISE-EN-LIGNE.md](docs/MISE-EN-LIGNE.md) : Infomaniak (Node.js 24) + Neon, mises à jour, sauvegardes,
+  branchement des SMS et e-mails, liste de contrôle avant ouverture.
+- [docs/AUDIT-ACCESSIBILITE-SECURITE.md](docs/AUDIT-ACCESSIBILITE-SECURITE.md) : audit WCAG 2.1 AA (axe-core,
+  0 violation), mesures de sécurité, état des dépendances et recommandations.
+
 ## Organisation
 
 ```
-prisma/            schéma, migrations, données de démonstration
+prisma/            schéma, migrations, données de démonstration (seed) et initialisation de production
+docs/              mise en ligne, audit accessibilité et sécurité
 src/app/           pages : portail client (public) et back-office (/bo)
 src/server/        code serveur uniquement : base, règles métier, droits, messagerie, stockage, exports
 src/lib/           code partagé : validation zod, formats, libellés

@@ -187,7 +187,7 @@ function EnTete({ vue, slug }: { vue: VueFiche; slug: string }) {
 
 function Frise({ vue }: { vue: VueFiche }) {
   return (
-    <ol aria-label="Étapes de traitement" className="relative m-0 flex list-none overflow-x-auto rounded-carte border border-bord bg-surface px-5 py-4 shadow-carte">
+    <ol aria-label="Étapes de traitement" tabIndex={0} className="relative m-0 flex list-none overflow-x-auto rounded-carte border border-bord bg-surface px-5 py-4 shadow-carte">
       {vue.etapes.map((e, i) => {
         const pastille = e.faite ? "border-marque bg-marque text-white" : e.courante ? "border-marque bg-surface text-marque" : "border-bord-fort bg-surface text-encre-4";
         const libelle = e.courante ? "font-bold text-marque" : e.faite ? "font-medium text-encre" : "font-medium text-encre-4";
