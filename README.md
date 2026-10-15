@@ -76,6 +76,13 @@ Mot de passe de tous les comptes : `demo2026`
 
 Les autres responsables et membres d'équipe suivent le même modèle : `prenom.nom@domaine-de-la-societe`.
 
+### Portail client
+
+<http://localhost:3000> ouvre le portail de la dernière société consultée (Carrefour Médical par défaut) :
+`/carrefour-medical`, `/sonerco`, `/fls`. Le lien des SMS, `/suivi`, renvoie au suivi de la bonne société
+d'après le préfixe du numéro. En mode démonstration, les SMS et e-mails s'affichent sur l'écran de confirmation
+sans être envoyés, et les pièces jointes sont rangées dans le dossier `stockage/` du projet.
+
 ### Espace collaborateurs
 
 Ajoutez une clé de session à votre `.env` (une seule fois) :

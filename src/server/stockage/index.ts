@@ -19,7 +19,8 @@ export interface Stockage {
 const CLE_VALIDE = /^[a-z0-9][a-z0-9/_.-]*$/;
 
 class StockageDisque implements Stockage {
-  private readonly racine = resolve(process.env.STOCKAGE_DOSSIER ?? "stockage");
+  // Dossier choisi par configuration : exclu de l'analyse des fichiers à embarquer au build.
+  private readonly racine = resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.STOCKAGE_DOSSIER ?? "stockage");
 
   private chemin(cle: string): string {
     if (!CLE_VALIDE.test(cle) || cle.includes("..")) throw new Error(`Clé de stockage invalide : ${cle}`);

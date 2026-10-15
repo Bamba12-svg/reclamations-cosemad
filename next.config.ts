@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Le client Prisma et le pilote pg restent côté serveur, non empaquetés.
   serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+  experimental: {
+    // Dépôt avec 3 pièces jointes de 10 Mo maximum (contrôlées une à une côté serveur).
+    serverActions: { bodySizeLimit: "32mb" },
+  },
   async headers() {
     return [
       {

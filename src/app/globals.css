@@ -63,6 +63,12 @@
   a {
     @apply text-marque hover:text-marque-fonce;
   }
+  /* Les maquettes gardent les titres en gras (Tailwind les remet à la graisse normale). */
+  h1,
+  h2,
+  h3 {
+    font-weight: 700;
+  }
   :focus-visible {
     outline: 2px solid var(--color-marque);
     outline-offset: 2px;
