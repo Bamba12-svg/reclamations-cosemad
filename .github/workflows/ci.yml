@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   verifier:
-    name: TypeScript, ESLint, migrations et build
+    name: TypeScript, ESLint, tests, migrations et build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -57,11 +57,17 @@ jobs:
           --to-schema prisma/schema.prisma
           --exit-code
 
+      - name: Données de démonstration
+        run: npm run db:seed
+
       - name: TypeScript
         run: npm run typecheck
 
       - name: ESLint
         run: npm run lint
+
+      - name: Tests (règles métier, droits, base de données)
+        run: npm test
 
       - name: Build de production
         run: npm run build

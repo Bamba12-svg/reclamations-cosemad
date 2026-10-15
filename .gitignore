@@ -17,7 +17,7 @@ src/generated/
 !.env.example
 
 # Fichiers téléversés en local
-stockage/
+/stockage/
 
 # Tests
 coverage/

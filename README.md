@@ -81,16 +81,30 @@ Les autres responsables et membres d'équipe suivent le même modèle : `prenom.
 | Commande | Rôle |
 |---|---|
 | `npm run dev` | serveur de développement |
-| `npm run verifier` | TypeScript + ESLint + build (à lancer avant chaque commit) |
+| `npm run verifier` | TypeScript + ESLint + tests + build (à lancer avant chaque commit) |
+| `npm test` | tests automatiques (règles métier, droits, validation, base de données) |
 | `npm run db:migrate -- --name <nom>` | nouvelle migration après une modification de `prisma/schema.prisma` |
 | `npm run db:seed` | recharger les données de démonstration |
 | `npm run db:reset` | tout effacer, réappliquer les migrations et recharger la démonstration |
 | `npm run db:studio` | explorer la base dans le navigateur |
 
+## Règles métier (src/server/domaine)
+
+| Règle | Fichier |
+|---|---|
+| Statut calculé (Nouvelle, En cours, En retard, Traitée), jamais stocké ; étapes visibles par le client | `statut.ts` |
+| Alertes de délai : qualification 24 h, réponse 5 jours ouvrés, clôture 15 jours | `delais.ts`, `jours-ouvres.ts` |
+| 8 conditions de clôture, conditions des visas, frise des 6 étapes | `cloture.ts` |
+| Numérotation PREFIXE-AAAA-NNNN sans doublon ni trou | `numerotation.ts` |
+| Droits par rôle et par société | `src/server/droits/permissions.ts` |
+
+Les tests de `tests/integration` utilisent la base de `.env` : ils créent leurs propres données de test et les suppriment.
+
 ## Intégration continue
 
 À chaque `push` sur `main`, GitHub Actions (Node 22, PostgreSQL 18) installe le projet, applique les migrations
-sur une base vierge, vérifie qu'elles correspondent au schéma, puis lance TypeScript, ESLint et le build.
+sur une base vierge, vérifie qu'elles correspondent au schéma, charge les données de démonstration, puis lance
+TypeScript, ESLint, les tests et le build.
 
 ## Organisation
 

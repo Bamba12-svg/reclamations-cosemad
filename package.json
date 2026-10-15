@@ -12,7 +12,9 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "verifier": "npm run typecheck && npm run lint && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verifier": "npm run typecheck && npm run lint && npm run test && npm run build",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -44,6 +46,8 @@
     "prisma": "7.10.0",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
   }
 }
