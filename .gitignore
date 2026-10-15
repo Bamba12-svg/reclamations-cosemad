@@ -1,0 +1,32 @@
+# Dépendances
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# Client Prisma généré (recréé par « npm install »)
+src/generated/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Fichiers téléversés en local
+stockage/
+
+# Tests
+coverage/
+test-results/
+playwright-report/
+
+# Système
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/extensions.json

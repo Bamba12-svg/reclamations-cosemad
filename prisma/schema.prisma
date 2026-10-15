@@ -1,0 +1,390 @@
+// Plateforme réclamations clients — Groupe COSEMAD
+// Prisma 7 : l'URL de connexion est fournie par prisma.config.ts.
+// Le statut d'une réclamation (Nouvelle, En cours, En retard, Traitée) n'est PAS stocké :
+// il est calculé (src/server/domaine/statut.ts), car « En retard » dépend de la date du jour.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  QHSE
+  DIRECTION_COMMERCIALE
+  AGENT_ACCUEIL
+  RESPONSABLE_TRAITEMENT
+  DIRECTION_GENERALE
+}
+
+enum ModeTransmission {
+  VERBAL
+  MAIL
+  TELEPHONE
+  COURRIER
+  PLATEFORME_WEB
+  AUTRES
+}
+
+enum Profil {
+  PARTICULIER
+  SOCIETE
+}
+
+enum TypeReclamation {
+  PRODUIT
+  SERVICE
+  AUTRE
+}
+
+enum SousTypeProduit {
+  QUALITE
+  PRIX
+  FONCTIONNALITE
+}
+
+enum Canal {
+  SMS
+  EMAIL
+}
+
+enum StatutAction {
+  A_FAIRE
+  EN_COURS
+  REALISEE
+}
+
+enum TypeVisa {
+  DIRECTION_COMMERCIALE
+  QHSE
+}
+
+enum SourcePiece {
+  CLIENT
+  INTERNE
+}
+
+enum StatutMessage {
+  DEMO
+  EN_ATTENTE
+  ENVOYE
+  ECHEC
+}
+
+// ───────────────────────── Organisation ─────────────────────────
+
+model Societe {
+  id           String             @id @default(cuid())
+  code         String             @unique // CM, SON, FLS : préfixe des numéros
+  slug         String             @unique // carrefour-medical, sonerco, fls : segment d'URL
+  nom          String
+  domaine      String // « Santé », « Énergie, sécurité, construction », « Agroalimentaire »
+  accroche     String
+  telStandard  String
+  mailDomaine  String
+  logo         String // chemin public, ex. /logos/fls.png
+  ordre        Int
+  activites    Activite[]
+  reclamations Reclamation[]
+  parametres   ParametresSociete?
+  compteurs    CompteurNumero[]
+  acces        AccesSociete[]
+  messages     Message[]
+}
+
+model ParametresSociete {
+  societeId           String   @id
+  societe             Societe  @relation(fields: [societeId], references: [id], onDelete: Cascade)
+  delaiQualificationH Int      @default(24)
+  delaiReponseJO      Int      @default(5) // jours ouvrés
+  delaiClotureJ       Int      @default(15)
+  modeleSms           String   @db.VarChar(160)
+  modeleEmailObjet    String   @db.VarChar(150)
+  modeleEmail         String   @db.Text
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  updatedById         String?
+}
+
+/// Compteur par société et par année : numérotation sans trou ni doublon (incrément en transaction).
+model CompteurNumero {
+  societeId String
+  annee     Int
+  dernier   Int     @default(0)
+  societe   Societe @relation(fields: [societeId], references: [id], onDelete: Cascade)
+
+  @@id([societeId, annee])
+}
+
+model Activite {
+  id            String        @id @default(cuid())
+  societeId     String
+  societe       Societe       @relation(fields: [societeId], references: [id])
+  code          String // OXY, DIA, ENR, CND…
+  nom           String // « CM Oxygène médical »
+  nomCourt      String // « Oxygène médical »
+  description   String
+  icone         String // tracé SVG (attribut d) repris de la maquette
+  ordre         Int
+  actif         Boolean       @default(true)
+  responsableId String?
+  responsable   User?         @relation("ResponsableActivite", fields: [responsableId], references: [id])
+  equipes       Equipe[]
+  reclamations  Reclamation[]
+
+  @@unique([societeId, code])
+}
+
+model Equipe {
+  id         String         @id @default(cuid())
+  activiteId String
+  activite   Activite       @relation(fields: [activiteId], references: [id], onDelete: Cascade)
+  nom        String
+  ordre      Int
+  membres    MembreEquipe[]
+}
+
+model MembreEquipe {
+  equipeId String
+  userId   String
+  equipe   Equipe @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id])
+
+  @@id([equipeId, userId])
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique // toujours en minuscules
+  nom               String
+  fonction          String?
+  role              Role
+  motDePasseHash    String? // null : compte sans accès à la connexion
+  actif             Boolean   @default(true)
+  toutesSocietes    Boolean   @default(false) // QHSE, Direction Commerciale, DG, accueil : tout le groupe
+  derniereConnexion DateTime? @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+
+  acces             AccesSociete[]
+  activitesDirigees Activite[]     @relation("ResponsableActivite")
+  equipes           MembreEquipe[]
+  dossiers          Reclamation[]  @relation("ResponsableReclamation")
+  saisies           Reclamation[]  @relation("SaisiePar")
+  reponses          Reclamation[]  @relation("ReponsePar")
+  clotures          Reclamation[]  @relation("CloturePar")
+  actions           Action[]
+  visas             Visa[]
+  commentaires      Commentaire[]
+  pieces            PieceJointe[]
+  evenements        Evenement[]
+  journal           JournalAudit[]
+}
+
+/// Sociétés accessibles à un utilisateur qui n'a pas « toutesSocietes ».
+model AccesSociete {
+  userId    String
+  societeId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  societe   Societe @relation(fields: [societeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, societeId])
+}
+
+// ───────────────────── Réclamation (fiche PR06-ENR-01) ─────────────────────
+
+model Reclamation {
+  id        String  @id @default(cuid())
+  numero    String  @unique // CM-2026-0042
+  societeId String
+  societe   Societe @relation(fields: [societeId], references: [id])
+  annee     Int
+  sequence  Int
+
+  // 1. Réception
+  activiteId      String
+  activite        Activite         @relation(fields: [activiteId], references: [id])
+  recueLe         DateTime         @db.Timestamptz(3) // date et heure réelles de réception
+  mode            ModeTransmission
+  origine         String // « Client particulier », « Société · Santé »…
+  saisieParId     String? // null : déposée par le client sur le portail
+  saisiePar       User?            @relation("SaisiePar", fields: [saisieParId], references: [id])
+  profil          Profil
+  clientNom       String           @db.VarChar(120)
+  secteur         String?          @db.VarChar(80)
+  contactNom      String?          @db.VarChar(120)
+  contactFonction String?          @db.VarChar(120)
+  telephone       String           @db.VarChar(16) // format E.164 : +221771234567
+  email           String?          @db.VarChar(254)
+  canauxReponse   Canal[]
+  consentementLe  DateTime?        @db.Timestamptz(3)
+
+  // 2. Objet et qualification
+  type         TypeReclamation
+  sousType     SousTypeProduit?
+  description  String           @db.VarChar(1000)
+  premiereFois Boolean? // réponse du client à la question 4
+  recurrent    Boolean          @default(false) // décision interne
+  similaires   Reclamation[]    @relation("Similaires")
+  similaireDe  Reclamation[]    @relation("Similaires")
+
+  // 3. Traitement
+  responsableId String?
+  responsable   User?     @relation("ResponsableReclamation", fields: [responsableId], references: [id])
+  affecteeLe    DateTime? @db.Timestamptz(3)
+  actions       Action[]
+
+  // 4. Retour au client
+  reponse       String?   @db.VarChar(600)
+  reponseLe     DateTime? @db.Timestamptz(3)
+  reponseCanaux Canal[]
+  reponseParId  String?
+  reponsePar    User?     @relation("ReponsePar", fields: [reponseParId], references: [id])
+
+  // 5. Amélioration continue et observations
+  causes       String? @db.Text
+  observations String? @db.Text
+
+  // 6. Visas et clôture
+  visas        Visa[]
+  clotureLe    DateTime? @db.Timestamptz(3)
+  clotureParId String?
+  cloturePar   User?     @relation("CloturePar", fields: [clotureParId], references: [id])
+
+  pieces       PieceJointe[]
+  commentaires Commentaire[]
+  historique   Evenement[]
+  messages     Message[]
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@unique([societeId, annee, sequence])
+  @@index([societeId, recueLe])
+  @@index([societeId, activiteId])
+  @@index([responsableId])
+  @@index([telephone])
+}
+
+model Action {
+  id            String       @id @default(cuid())
+  reclamationId String
+  reclamation   Reclamation  @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  ordre         Int
+  libelle       String       @db.VarChar(300)
+  responsableId String
+  responsable   User         @relation(fields: [responsableId], references: [id])
+  echeance      DateTime     @db.Date
+  statut        StatutAction @default(A_FAIRE)
+  critere       String       @db.VarChar(300)
+  efficace      Boolean? // null : pas encore évaluée
+  realiseeLe    DateTime?    @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([reclamationId])
+  @@index([responsableId, statut, echeance])
+}
+
+model Visa {
+  id            String      @id @default(cuid())
+  reclamationId String
+  reclamation   Reclamation @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  type          TypeVisa
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  viseLe        DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@unique([reclamationId, type])
+}
+
+model PieceJointe {
+  id            String      @id @default(cuid())
+  reclamationId String
+  reclamation   Reclamation @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  source        SourcePiece
+  nomOriginal   String      @db.VarChar(200)
+  typeMime      String      @db.VarChar(80) // vérifié par la signature binaire du fichier
+  taille        Int // octets, 10 Mo maximum
+  cleStockage   String      @unique
+  sha256        String      @db.Char(64)
+  deposeeParId  String?
+  deposeePar    User?       @relation(fields: [deposeeParId], references: [id])
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([reclamationId])
+}
+
+/// Commentaire interne : jamais exposé au portail client.
+model Commentaire {
+  id            String      @id @default(cuid())
+  reclamationId String
+  reclamation   Reclamation @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  auteurId      String
+  auteur        User        @relation(fields: [auteurId], references: [id])
+  texte         String      @db.VarChar(2000)
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([reclamationId])
+}
+
+/// Historique horodaté et lisible de la fiche.
+model Evenement {
+  id            String      @id @default(cuid())
+  reclamationId String
+  reclamation   Reclamation @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  survenuLe     DateTime    @default(now()) @db.Timestamptz(3)
+  libelle       String // « Affectée à Cheikh Sy (CM Oxygène médical) »
+  acteurId      String?
+  acteur        User?       @relation(fields: [acteurId], references: [id])
+  acteurLibelle String? // « Client », « Système »
+
+  @@index([reclamationId, survenuLe])
+}
+
+/// SMS et e-mails sortants, y compris ceux du mode démo (affichés sans être envoyés).
+model Message {
+  id            String        @id @default(cuid())
+  societeId     String
+  societe       Societe       @relation(fields: [societeId], references: [id])
+  reclamationId String?
+  reclamation   Reclamation?  @relation(fields: [reclamationId], references: [id])
+  canal         Canal
+  destinataire  String
+  objet         String?
+  corps         String        @db.Text
+  statut        StatutMessage
+  fournisseur   String // « demo », « orange », « smtp »…
+  idExterne     String?
+  erreur        String?
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  envoyeLe      DateTime?     @db.Timestamptz(3)
+
+  @@index([societeId, createdAt])
+  @@index([reclamationId])
+}
+
+/// Journal technique de toutes les opérations (ajout seul).
+model JournalAudit {
+  id        BigInt   @id @default(autoincrement())
+  survenuLe DateTime @default(now()) @db.Timestamptz(3)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  societeId String?
+  action    String // « reclamation.cloturer », « auth.connexion »…
+  entite    String
+  entiteId  String?
+  details   Json?
+  ip        String?
+  userAgent String?
+
+  @@index([entite, entiteId])
+  @@index([userId, survenuLe])
+}
+
+/// Jours fériés saisis par le QHSE, exclus du calcul des jours ouvrés.
+model JourFerie {
+  date    DateTime @id @db.Date
+  libelle String
+}

@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/*
+ * Design system COSEMAD — valeurs reprises à l'identique des maquettes validées
+ * (Portail client et Back-office). Toute couleur de l'interface passe par ces jetons.
+ */
+@theme {
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* Marque */
+  --color-marque: #0b4a8b;
+  --color-marque-fonce: #093c72;
+  --color-marque-encre: #0b3a6e;
+  --color-marque-pale: #eaf1fa;
+
+  /* Texte */
+  --color-encre: #101828;
+  --color-encre-2: #344054;
+  --color-encre-3: #475467;
+  --color-encre-4: #667085;
+  --color-encre-5: #98a2b3;
+
+  /* Surfaces et bordures */
+  --color-fond: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-surface-2: #f9fafb;
+  --color-surface-3: #f2f4f7;
+  --color-bord: #e4e7ec;
+  --color-bord-fort: #d0d5dd;
+
+  /* Statuts (badge : fond / texte / bordure) */
+  --color-nouvelle: #1d4ed8;
+  --color-nouvelle-fond: #eff4ff;
+  --color-nouvelle-bord: #c7d7fe;
+  --color-encours: #93370d;
+  --color-encours-fond: #fffaeb;
+  --color-encours-bord: #fedf89;
+  --color-retard: #b42318;
+  --color-retard-fond: #fef3f2;
+  --color-retard-bord: #fecdca;
+  --color-retard-ligne: #fffbfa;
+  --color-traitee: #067647;
+  --color-traitee-fond: #ecfdf3;
+  --color-traitee-bord: #abefc6;
+  --color-alerte: #dc6803;
+
+  /* Rayons et ombres */
+  --radius-champ: 0.625rem;
+  --radius-carte: 0.75rem;
+  --shadow-carte: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-flottant: 0 12px 24px rgba(16, 24, 40, 0.18);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-fond text-encre font-sans;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  a {
+    @apply text-marque hover:text-marque-fonce;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-marque);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+  input,
+  textarea,
+  button,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

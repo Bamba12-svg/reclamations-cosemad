@@ -1,0 +1,67 @@
+name: Vérification et build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    name: TypeScript, ESLint, migrations et build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: cosemad
+          POSTGRES_PASSWORD: cosemad
+          POSTGRES_DB: reclamations
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cosemad"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://cosemad:cosemad@localhost:5432/reclamations?schema=public
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installation (génère aussi le client Prisma)
+        run: npm ci
+
+      - name: Schéma Prisma valide
+        run: npx prisma validate
+
+      - name: Migrations appliquées sur une base vierge
+        run: npx prisma migrate deploy
+
+      - name: Migrations à jour par rapport au schéma
+        run: >-
+          npx prisma migrate diff
+          --from-config-datasource
+          --to-schema prisma/schema.prisma
+          --exit-code
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Build de production
+        run: npm run build
