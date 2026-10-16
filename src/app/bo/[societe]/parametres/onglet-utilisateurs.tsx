@@ -130,7 +130,7 @@ function MotDePasseAffiche({ secret, fermer }: { secret: { nom: string; email: s
         <p className="m-0 text-sm text-encre-2">
           Identifiant : {secret.email} · Mot de passe : <code className="rounded bg-surface px-2 py-0.5 text-base font-semibold tracking-wide">{secret.motDePasse}</code>
         </p>
-        <p className="m-0 text-[0.8125rem] text-encre-3">Communiquez-le en main propre. Il ne sera plus affiché après fermeture de ce message.</p>
+        <p className="m-0 text-[0.8125rem] text-encre-3">Communiquez-le en main propre. La personne devra le remplacer par son propre mot de passe à la première connexion. Il ne sera plus affiché après fermeture de ce message.</p>
       </div>
       <div className="flex gap-2">
         <button

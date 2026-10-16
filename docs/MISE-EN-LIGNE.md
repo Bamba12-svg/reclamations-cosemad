@@ -39,6 +39,8 @@ Remove-Item Env:DATABASE_URL, Env:DATABASE_URL_UNPOOLED, Env:INIT_QHSE_MOT_DE_PA
 `db:init` ne crée **aucune donnée de démonstration**. Il peut être relancé sans risque : ce qui existe déjà n'est
 ni modifié ni dupliqué. **Ne lancez jamais `npm run db:seed` sur la base de production** : il la vide.
 
+À sa première connexion, le compte QHSE doit remplacer ce mot de passe d'installation par un mot de passe personnel.
+
 ---
 
 ## 2. Site Node.js Infomaniak
@@ -104,7 +106,8 @@ Enregistrez, lancez la construction, puis **démarrez** le site.
 3. `/bo` : connexion avec le compte créé par `db:init`.
 4. Dans **Paramètres** :
    - créez les comptes : Direction Commerciale, accueil, Direction générale, responsables de traitement.
-     Chaque compte reçoit un mot de passe provisoire, affiché une seule fois ;
+     Chaque compte reçoit un mot de passe provisoire, affiché une seule fois. La personne doit le remplacer par
+     son propre mot de passe à sa première connexion : tant qu'elle ne l'a pas fait, elle n'accède à rien d'autre ;
    - désignez le responsable et les membres des équipes de chaque activité ;
    - ajoutez les jours fériés à date variable de l'année (Korité, Tabaski, Tamkharit, Maouloud, Magal…) ;
    - relisez les modèles de SMS. L'écran signale les caractères qui doublent le prix d'un SMS.
@@ -147,7 +150,7 @@ en production.
 - **Comptes** : quand une personne quitte l'entreprise, *Paramètres → Utilisateurs → Désactiver*. L'effet est
   immédiat, et l'historique de ses actions est conservé.
 - **Mot de passe oublié** : *Paramètres → Utilisateurs → Nouveau mot de passe*. Le QHSE remet le mot de passe
-  provisoire en main propre.
+  provisoire en main propre. La personne le remplace à la connexion suivante.
 
 ---
 

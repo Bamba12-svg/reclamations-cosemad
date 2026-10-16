@@ -162,6 +162,7 @@ model User {
   fonction          String?
   role              Role
   motDePasseHash    String? // null : compte sans accès à la connexion
+  doitChangerMotDePasse Boolean @default(false) // mot de passe provisoire : à changer à la prochaine connexion
   actif             Boolean   @default(true)
   toutesSocietes    Boolean   @default(false) // QHSE, Direction Commerciale, DG, accueil : tout le groupe
   derniereConnexion DateTime? @db.Timestamptz(3)

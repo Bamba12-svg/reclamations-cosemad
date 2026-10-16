@@ -221,7 +221,7 @@ export function creerUtilisateur(acteur: Acteur, societeId: string, saisie: unkn
     if (await tx.user.findUnique({ where: { email: u.email } })) throw new Refus("Cette adresse e-mail est déjà utilisée.");
     const motDePasse = motDePasseProvisoire();
     const cree = await tx.user.create({
-      data: { nom: u.nom, email: u.email, fonction: u.fonction || null, role: u.role, motDePasseHash: await bcrypt.hash(motDePasse, 10) },
+      data: { nom: u.nom, email: u.email, fonction: u.fonction || null, role: u.role, motDePasseHash: await bcrypt.hash(motDePasse, 10), doitChangerMotDePasse: true },
     });
     await rattacher(tx, cree.id, u.role, societeId);
     return {
@@ -278,7 +278,7 @@ export function reinitialiserMotDePasse(acteur: Acteur, societeId: string, userI
     if (!u) throw new Refus("Utilisateur introuvable.");
     if (!u.actif) throw new Refus("Réactivez d'abord ce compte.");
     const motDePasse = motDePasseProvisoire();
-    await tx.user.update({ where: { id: u.id }, data: { motDePasseHash: await bcrypt.hash(motDePasse, 10) } });
+    await tx.user.update({ where: { id: u.id }, data: { motDePasseHash: await bcrypt.hash(motDePasse, 10), doitChangerMotDePasse: true } });
     return { message: `Nouveau mot de passe pour ${u.nom}`, motDePasse, action: "utilisateur.mot-de-passe", entite: "User", entiteId: u.id };
   });
 }

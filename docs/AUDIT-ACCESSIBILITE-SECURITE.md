@@ -51,7 +51,7 @@
 | **CSRF** | Actions serveur Next.js : contrôle de l'origine de la requête. Cookies `SameSite=Lax`. |
 | **Garde-fous de configuration** | Démarrage refusé en production :<br>• sans `AUTH_SECRET` (32 caractères minimum) ;<br>• avec `MODE_DEMO=1`, sauf démonstration publique explicitement déclarée (`DEMO_EN_LIGNE=1`).<br>Avertissement si les SMS ne sont pas réellement envoyés. Le seed de démonstration refuse de tourner en production. |
 | **Traçabilité** | Journal d'audit en ajout seul, écrit dans la même transaction que l'opération : connexions, échecs, consultations de pièces, exports, paramètres. |
-| **Comptes** | Mots de passe provisoires aléatoires, affichés une seule fois, jamais stockés en clair. Impossible de se retirer ses propres droits ou de désactiver le dernier compte QHSE. |
+| **Comptes** | Mots de passe provisoires aléatoires, affichés une seule fois, jamais stockés en clair. **Remplacement obligatoire à la première connexion** (et après chaque réinitialisation) : jusque-là, toutes les pages, actions et pièces jointes sont refusées. Le nouveau mot de passe : 10 caractères minimum, lettres et chiffres, différent du provisoire. Impossible de se retirer ses propres droits ou de désactiver le dernier compte QHSE. |
 
 ### Dépendances (`npm audit --omit=dev`, 15/10/2026)
 
@@ -66,9 +66,7 @@ partout, sans effet sur la connexion : le fournisseur e-mail de next-auth n'est 
 
 ### Recommandations restantes
 
-1. **Changement obligatoire du mot de passe provisoire** à la première connexion. Il faut ajouter un champ au
-   modèle `User` et une migration.
-2. **Limitation des tentatives partagée** (Redis ou table PostgreSQL) si l'application tourne un jour sur
+1. **Limitation des tentatives partagée** (Redis ou table PostgreSQL) si l'application tourne un jour sur
    plusieurs instances.
-3. **Double authentification** pour les comptes QHSE, si la DSI l'exige.
-4. Revue de cet audit à chaque évolution majeure, ou au minimum une fois par an.
+2. **Double authentification** pour les comptes QHSE, si la DSI l'exige.
+3. Revue de cet audit à chaque évolution majeure, ou au minimum une fois par an.

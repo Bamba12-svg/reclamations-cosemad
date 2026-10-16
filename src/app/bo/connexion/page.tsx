@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Connexion" };
 export default async function PageConnexion({ searchParams }: { searchParams: Promise<{ societe?: string }> }) {
   const acteur = await acteurCourant();
   if (acteur) {
+    if (acteur.doitChangerMotDePasse) redirect("/bo/mot-de-passe");
     const slug = await slugParDefaut(acteur);
     redirect(slug ? `/bo/${slug}` : "/");
   }

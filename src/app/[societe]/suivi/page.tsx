@@ -11,5 +11,5 @@ export default async function PageSuivi({ params, searchParams }: { params: Prom
   const [societe, { numero }] = await Promise.all([societePortail((await params).societe), searchParams]);
   if (!societe) notFound();
   const exemple = EXEMPLES_SUIVI[societe.code] ?? null;
-  return <SuiviReclamation numeroInitial={(numero ?? "").slice(0, 20).toUpperCase()} exemple={modeDemo() ? exemple : null} prefixe={societe.code} />;
+  return <SuiviReclamation numeroInitial={(numero ?? "").slice(0, 20).toUpperCase()} exemple={modeDemo() ? exemple : null} prefixe={societe.code} nomSociete={societe.nom} />;
 }

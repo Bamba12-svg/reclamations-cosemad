@@ -12,7 +12,7 @@ import { lireContenu } from "@/server/stockage";
  */
 export async function GET(requete: Request, { params }: { params: Promise<{ societe: string; numero: string; id: string }> }) {
   const acteur = await acteurCourant();
-  if (!acteur) return new Response("Connexion requise.", { status: 401 });
+  if (!acteur || acteur.doitChangerMotDePasse) return new Response("Connexion requise.", { status: 401 });
   const { societe: slug, numero, id } = await params;
 
   const piece = await db.pieceJointe.findUnique({

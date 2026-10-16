@@ -54,6 +54,7 @@ export interface Acteur {
   societeIds: readonly string[]; // sociétés accessibles si toutesSocietes = false
   activiteIds: readonly string[]; // activités dont il est responsable ou membre d'équipe (visibilité)
   activitesDirigeesIds: readonly string[]; // activités dont il est le responsable (gestion des actions)
+  doitChangerMotDePasse?: boolean; // mot de passe provisoire : accès limité à l'écran de changement
 }
 
 export class AccesRefuse extends Error {

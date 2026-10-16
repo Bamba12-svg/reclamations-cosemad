@@ -10,10 +10,12 @@ export function SuiviReclamation({
   numeroInitial,
   exemple,
   prefixe,
+  nomSociete,
 }: {
   numeroInitial: string;
   exemple: { numero: string; telephone: string } | null;
   prefixe: string;
+  nomSociete: string;
 }) {
   const [resultat, setResultat] = useState<SuiviClient | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -146,7 +148,7 @@ export function SuiviReclamation({
 
           {resultat.reponse ? (
             <div className="flex flex-col gap-2 rounded-carte border border-bord bg-surface p-4.5">
-              <p className="m-0 text-[0.8125rem] font-semibold text-marque">Réponse de COSEMAD · {resultat.reponse.date}</p>
+              <p className="m-0 text-[0.8125rem] font-semibold text-marque">Réponse de {nomSociete} · {resultat.reponse.date}</p>
               <p className="m-0 text-base text-pretty">{resultat.reponse.texte}</p>
             </div>
           ) : (

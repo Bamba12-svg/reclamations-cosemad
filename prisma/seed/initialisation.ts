@@ -87,7 +87,7 @@ async function main() {
       throw new Error("INIT_QHSE_MOT_DE_PASSE : 12 caractères minimum, avec au moins une lettre et un chiffre.");
     }
     const u = await db.user.create({
-      data: { nom, email, fonction: "Service QHSE", role: "QHSE", toutesSocietes: true, motDePasseHash: await bcrypt.hash(motDePasse, 12) },
+      data: { nom, email, fonction: "Service QHSE", role: "QHSE", toutesSocietes: true, motDePasseHash: await bcrypt.hash(motDePasse, 12), doitChangerMotDePasse: true },
     });
     await db.journalAudit.create({ data: { action: "utilisateur.creer", entite: "User", entiteId: u.id, details: { email, role: "QHSE", origine: "db:init" } } });
     console.log(`Compte Service QHSE créé : ${email}. Connectez-vous puis créez les autres comptes dans Paramètres.`);

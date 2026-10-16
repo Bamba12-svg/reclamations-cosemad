@@ -12,6 +12,7 @@ export async function chargerActeur(db: PrismaClient, userId: string): Promise<A
       role: true,
       actif: true,
       toutesSocietes: true,
+      doitChangerMotDePasse: true,
       acces: { select: { societeId: true } },
       activitesDirigees: { select: { id: true } },
       equipes: { select: { equipe: { select: { activiteId: true } } } },
@@ -28,5 +29,6 @@ export async function chargerActeur(db: PrismaClient, userId: string): Promise<A
     societeIds: u.acces.map((a) => a.societeId),
     activiteIds: [...new Set([...dirigees, ...membre])],
     activitesDirigeesIds: dirigees,
+    doitChangerMotDePasse: u.doitChangerMotDePasse,
   };
 }

@@ -20,6 +20,7 @@ export const acteurCourant = cache(async (): Promise<Acteur | null> => {
 export async function exigerActeur(): Promise<Acteur> {
   const acteur = await acteurCourant();
   if (!acteur) redirect("/bo/connexion");
+  if (acteur.doitChangerMotDePasse) redirect("/bo/mot-de-passe");
   return acteur;
 }
 

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { changerMotDePasseProvisoire } from "@/server/compte";
 import { chargerActeur } from "@/server/droits/acteur";
 import type { Acteur } from "@/server/droits/permissions";
 import {
@@ -79,6 +80,7 @@ describe("paramètres QHSE (base réelle)", () => {
     nouveauId = u.id;
     crees.push(u.id);
     expect(u.toutesSocietes).toBe(false);
+    expect(u.doitChangerMotDePasse).toBe(true);
     expect(u.acces.map((a) => a.societeId)).toEqual([societe.id]);
     expect(await bcrypt.compare(r.ok ? r.motDePasse! : "", u.motDePasseHash!)).toBe(true);
     expect(await creerUtilisateur(qhse, societe.id, { nom: "Doublon", email: `np-${suffixe}@test.sn`, role: "QHSE" }, ctx)).toEqual({ ok: false, erreur: "Cette adresse e-mail est déjà utilisée." });
@@ -96,6 +98,25 @@ describe("paramètres QHSE (base réelle)", () => {
     expect((await activerUtilisateur(qhse, societe.id, nouveauId, true, ctx)).ok).toBe(true);
     const r = await reinitialiserMotDePasse(qhse, societe.id, nouveauId, ctx);
     expect(r.ok && r.motDePasse).toBeTruthy();
+    expect((await chargerActeur(db, nouveauId))?.doitChangerMotDePasse).toBe(true);
+  });
+
+  it("mot de passe provisoire : remplacement obligatoire, contrôlé côté serveur", async () => {
+    const provisoire = (await reinitialiserMotDePasse(qhse, societe.id, nouveauId, ctx)) as { ok: true; motDePasse: string };
+    const changer = (motDePasse: string, confirmation = motDePasse) => changerMotDePasseProvisoire(db, nouveauId, { motDePasse, confirmation }, ctx);
+
+    expect(await changer("court1")).toMatchObject({ ok: false, champs: { motDePasse: "Au moins 10 caractères." } });
+    expect(await changer("sanschiffreici")).toMatchObject({ ok: false, champs: { motDePasse: "Utilisez au moins une lettre et un chiffre." } });
+    expect(await changer("Dakar2026sn", "Dakar2026SN")).toMatchObject({ ok: false, champs: { confirmation: "Les deux mots de passe ne sont pas identiques." } });
+    expect(await changer(provisoire.motDePasse)).toMatchObject({ ok: false, champs: { motDePasse: "Choisissez un mot de passe différent du mot de passe provisoire." } });
+
+    expect(await changer("Dakar2026sn")).toEqual({ ok: true });
+    const u = await db.user.findUniqueOrThrow({ where: { id: nouveauId } });
+    expect(u.doitChangerMotDePasse).toBe(false);
+    expect(await bcrypt.compare("Dakar2026sn", u.motDePasseHash!)).toBe(true);
+    expect(await db.journalAudit.count({ where: { action: "auth.mot-de-passe-choisi", userId: nouveauId } })).toBe(1);
+    // Une seule fois : ce n'est pas un moyen de changer de mot de passe sans connaître l'actuel.
+    expect(await changer("Autre2026xx")).toEqual({ ok: false, erreur: "Votre mot de passe a déjà été choisi." });
   });
 
   it("activités : création (code unique), responsable et équipes", async () => {
