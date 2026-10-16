@@ -60,6 +60,10 @@
 | `prisma` (via `deepmerge-ts`, `mysql2`) | élevée | Outil en ligne de commande (migrations), jamais exposé aux requêtes des utilisateurs. `mysql2` n'est pas utilisé (base PostgreSQL). Corrigé dans Prisma 7.10.1, publié le jour de l'audit : **passer à 7.10.1 fin octobre** pour `prisma`, `@prisma/client` et `@prisma/adapter-pg` ensemble. |
 | `exceljs` (via `uuid` < 11.1.1) | modérée | La faille ne concerne que les UUID v3/v5/v6 avec tampon fourni. exceljs n'utilise que la v4 : non exploitable. La seule « correction » proposée rétrograde exceljs en 3.4 : ne pas lancer `npm audit fix --force`. |
 
+`nodemailer` (envoi des e-mails) est figé en 10.0.13, sans alerte connue. next-auth le déclare en dépendance facultative
+limitée à la version 8, qui a des failles connues. Une règle `overrides` du `package.json` impose donc la version 10
+partout, sans effet sur la connexion : le fournisseur e-mail de next-auth n'est pas utilisé.
+
 ### Recommandations restantes
 
 1. **Changement obligatoire du mot de passe provisoire** à la première connexion. Il faut ajouter un champ au

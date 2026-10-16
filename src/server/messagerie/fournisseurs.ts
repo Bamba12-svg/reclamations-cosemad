@@ -1,9 +1,11 @@
 import type { Canal } from "@/generated/prisma/client";
+import { fournisseurSmtp } from "./smtp";
 
 /**
- * Interface commune aux fournisseurs d'envoi. Le choix du fournisseur SMS (Orange, Free,
- * Twilio…) et de l'adresse d'expédition des e-mails est en attente : il suffira d'ajouter ici
- * une implémentation de FournisseurMessage et de la déclarer dans FOURNISSEURS.
+ * Interface commune aux fournisseurs d'envoi.
+ *  - E-mail : serveur SMTP de COSEMAD (smtp.ts), actif dès que SMTP_HOTE est renseigné dans .env.
+ *  - SMS : fournisseur à choisir (Orange, Free, agrégateur…) — il suffira d'ajouter ici une
+ *    implémentation de FournisseurMessage pour le canal SMS.
  */
 export interface MessageAEnvoyer {
   destinataire: string;
@@ -17,13 +19,9 @@ export interface FournisseurMessage {
   envoyer(message: MessageAEnvoyer): Promise<{ idExterne?: string }>;
 }
 
-const FOURNISSEURS: Partial<Record<Canal, FournisseurMessage>> = {
-  // SMS: orangeSms,   ← à brancher quand le fournisseur sera choisi
-  // EMAIL: smtp,
-};
-
 export function fournisseurPour(canal: Canal): FournisseurMessage | undefined {
-  return FOURNISSEURS[canal];
+  if (canal === "EMAIL") return fournisseurSmtp() ?? undefined;
+  return undefined; // SMS : fournisseur à brancher
 }
 
 export type ModeMessagerie = "demo" | "production";

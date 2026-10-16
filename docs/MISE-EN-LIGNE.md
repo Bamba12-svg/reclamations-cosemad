@@ -151,20 +151,58 @@ en production.
 
 ---
 
-## 5. Brancher l'envoi réel des SMS et e-mails
+## 5. Brancher l'envoi réel des e-mails et des SMS
 
 Tant que `MESSAGERIE_MODE="demo"`, les messages sont **enregistrés** (table `Message`, statut `DEMO`) mais
 **pas envoyés** : les clients ne reçoivent ni SMS ni e-mail.
 
-Une fois le fournisseur choisi (Orange, Free, un agrégateur SMS, un serveur SMTP…) :
+### E-mails : déjà prêts, il suffit de renseigner le compte
 
-1. Implémentez l'interface `FournisseurMessage` dans `src/server/messagerie/fournisseurs.ts` (une fonction
-   `envoyer` par canal) et déclarez-la dans `FOURNISSEURS`.
-2. Ajoutez ses identifiants au `.env` du serveur.
-3. Passez `MESSAGERIE_MODE="production"` et redémarrez.
+Les e-mails partent par le serveur de messagerie de COSEMAD (SMTP). Créez de préférence une adresse dédiée, par
+exemple `reclamations@cosemad.sn`, plutôt qu'une boîte personnelle. Ajoutez ensuite au `.env` du serveur :
 
-Chaque message passe alors par les statuts `EN_ATTENTE`, puis `ENVOYE` ou `ECHEC` (avec le message d'erreur).
-Un échec d'envoi n'annule jamais l'enregistrement de la réclamation.
+```dotenv
+SMTP_HOTE="mail.infomaniak.com"      # adresse SMTP du fournisseur de messagerie de cosemad.sn
+SMTP_PORT="465"                      # 465 (SSL) ou 587 (STARTTLS)
+SMTP_UTILISATEUR="reclamations@cosemad.sn"
+SMTP_MOT_DE_PASSE="…"
+EMAIL_EXPEDITEUR="Groupe COSEMAD – Réclamations <reclamations@cosemad.sn>"
+EMAIL_REPONSE="qhse@cosemad.sn"      # facultatif : boîte qui reçoit les réponses des clients
+```
+
+Paramètres SMTP habituels selon l'hébergeur de la messagerie :
+
+| Messagerie de cosemad.sn | SMTP_HOTE | SMTP_PORT |
+|---|---|---|
+| Infomaniak | `mail.infomaniak.com` | 465 |
+| Microsoft 365 | `smtp.office365.com` | 587 |
+| Google Workspace | `smtp.gmail.com` | 465 (mot de passe d'application) |
+
+Microsoft retire progressivement l'envoi SMTP par simple mot de passe sur Microsoft 365 : dans ce cas, voyez avec
+l'administrateur de la messagerie (autorisation SMTP pour cette boîte, ou relais SMTP).
+
+Vérifiez la configuration avant l'ouverture. La commande envoie un vrai e-mail d'essai :
+
+```bash
+npm run email:test -- votre.adresse@exemple.sn
+```
+
+Pour que les e-mails n'arrivent pas en « Indésirables », l'administrateur du domaine `cosemad.sn` doit avoir
+configuré **SPF** et **DKIM** pour ce serveur. C'est généralement déjà fait si la messagerie de l'entreprise
+fonctionne.
+
+### SMS : fournisseur à choisir
+
+Une fois le fournisseur choisi (Orange, Free, un agrégateur SMS…), implémentez l'interface
+`FournisseurMessage` dans `src/server/messagerie/fournisseurs.ts`, sur le modèle de `smtp.ts`. Ajoutez ses
+identifiants au `.env`.
+
+### Activation
+
+Passez `MESSAGERIE_MODE="production"` et redémarrez. Chaque message passe alors par les statuts `EN_ATTENTE`, puis
+`ENVOYE` ou `ECHEC` (avec le message d'erreur). Un échec d'envoi n'annule jamais l'enregistrement de la réclamation.
+Tant que le fournisseur SMS n'est pas branché, les SMS sont marqués `ECHEC` (« Aucun fournisseur SMS n'est
+configuré ») et seuls les e-mails partent.
 
 ---
 
