@@ -10,7 +10,9 @@ describe("garde-fous de configuration au démarrage", () => {
   const enLigne = (env: Record<string, string | undefined>) => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    process.env = { ...sauvegarde, NEXT_RUNTIME: "nodejs", NODE_ENV: "production", DATABASE_URL: "postgresql://x", AUTH_SECRET: "x".repeat(32), MODE_DEMO: "0", ...env };
+    // Valeurs neutres d'abord : le test ne doit pas dépendre de la console qui le lance (ex. set DEMO_EN_LIGNE=1).
+    const neutre = { DEMO_EN_LIGNE: undefined, MESSAGERIE_MODE: undefined };
+    process.env = { ...sauvegarde, ...neutre, NEXT_RUNTIME: "nodejs", NODE_ENV: "production", DATABASE_URL: "postgresql://x", AUTH_SECRET: "x".repeat(32), MODE_DEMO: "0", ...env };
   };
 
   it("démarre avec une configuration de production correcte", () => {
