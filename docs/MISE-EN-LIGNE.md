@@ -172,23 +172,51 @@ en production.
 Tant que `MESSAGERIE_MODE="demo"`, les messages sont **enregistrés** (table `Message`, statut `DEMO`) mais
 **pas envoyés** : les clients ne reçoivent ni SMS ni e-mail.
 
-### E-mails : déjà prêts, il suffit de renseigner le compte
+### E-mails : une boîte par filiale
 
-Les e-mails partent par le serveur de messagerie de COSEMAD (SMTP). Créez de préférence une adresse dédiée, par
-exemple `reclamations@cosemad.sn`, plutôt qu'une boîte personnelle. Ajoutez ensuite au `.env` du serveur :
+Les filiales sont des sociétés distinctes : chacune écrit à ses clients **depuis sa propre adresse**, et les réponses
+des clients arrivent chez la personne désignée par la filiale. La messagerie est hébergée chez **Infomaniak**.
+
+**1. Les boîtes d'envoi (`.env` du serveur).** Pour chaque filiale, l'adresse qui envoie et son mot de passe :
 
 ```dotenv
-SMTP_HOTE="mail.infomaniak.com"      # adresse SMTP du fournisseur de messagerie de cosemad.sn
-SMTP_PORT="465"                      # 465 (SSL) ou 587 (STARTTLS)
-SMTP_UTILISATEUR="reclamations@cosemad.sn"
-SMTP_MOT_DE_PASSE="…"
-EMAIL_EXPEDITEUR="Groupe COSEMAD – Réclamations <reclamations@cosemad.sn>"
-EMAIL_REPONSE="qhse@cosemad.sn"      # facultatif : boîte qui reçoit les réponses des clients
+SMTP_HOTE="mail.infomaniak.com"
+SMTP_PORT="465"
+
+SMTP_UTILISATEUR_CM="prenom.nom@carrefourmedical.sn"
+SMTP_MOT_DE_PASSE_CM="…"
+EMAIL_EXPEDITEUR_CM="Carrefour Médical – Réclamations <prenom.nom@carrefourmedical.sn>"
+
+SMTP_UTILISATEUR_SON="…@…"
+SMTP_MOT_DE_PASSE_SON="…"
+EMAIL_EXPEDITEUR_SON="Sonerco – Réclamations <…@…>"
+
+SMTP_UTILISATEUR_FLS="…@…"
+SMTP_MOT_DE_PASSE_FLS="…"
+EMAIL_EXPEDITEUR_FLS="FLS – Réclamations <…@…>"
 ```
 
-Paramètres SMTP habituels selon l'hébergeur de la messagerie :
+- `EMAIL_EXPEDITEUR_…` est le nom affiché au client. L'adresse entre `< >` doit être celle de la boîte (sinon le
+  serveur refuse l'envoi ou le message part en indésirables). Sans cette ligne, l'adresse seule est affichée.
+- Une filiale **sans** boîte propre utilise la boîte commune `SMTP_UTILISATEUR` / `SMTP_MOT_DE_PASSE` /
+  `EMAIL_EXPEDITEUR`, si elle est renseignée ; sinon ses e-mails sont marqués `ECHEC`.
+- Si une filiale a sa messagerie ailleurs, ajoutez pour elle `SMTP_HOTE_…` et `SMTP_PORT_…`.
 
-| Messagerie de cosemad.sn | SMTP_HOTE | SMTP_PORT |
+**2. L'adresse qui reçoit les réponses (dans l'application).** *Paramètres → Modèles SMS et e-mail → Adresse qui
+reçoit les réponses des clients*, pour chaque filiale. Le Service QHSE la change lui-même quand la personne change,
+sans toucher au serveur. Laissée vide, les réponses arrivent dans la boîte d'envoi de la filiale.
+
+**3. Le test.** Pour chaque filiale, la commande vérifie le mot de passe puis envoie un vrai e-mail d'essai :
+
+```bash
+npm run email:test -- votre.adresse@exemple.sn CM
+npm run email:test -- votre.adresse@exemple.sn SON
+npm run email:test -- votre.adresse@exemple.sn FLS
+```
+
+Autres messageries, si une filiale n'est pas chez Infomaniak :
+
+| Messagerie | SMTP_HOTE | SMTP_PORT |
 |---|---|---|
 | Infomaniak | `mail.infomaniak.com` | 465 |
 | Microsoft 365 | `smtp.office365.com` | 587 |
@@ -197,15 +225,8 @@ Paramètres SMTP habituels selon l'hébergeur de la messagerie :
 Microsoft retire progressivement l'envoi SMTP par simple mot de passe sur Microsoft 365 : dans ce cas, voyez avec
 l'administrateur de la messagerie (autorisation SMTP pour cette boîte, ou relais SMTP).
 
-Vérifiez la configuration avant l'ouverture. La commande envoie un vrai e-mail d'essai :
-
-```bash
-npm run email:test -- votre.adresse@exemple.sn
-```
-
-Pour que les e-mails n'arrivent pas en « Indésirables », l'administrateur du domaine `cosemad.sn` doit avoir
-configuré **SPF** et **DKIM** pour ce serveur. C'est généralement déjà fait si la messagerie de l'entreprise
-fonctionne.
+Pour que les e-mails n'arrivent pas en « Indésirables », chaque domaine d'envoi doit avoir **SPF** et **DKIM**
+configurés pour son serveur. C'est généralement déjà fait si la messagerie de la filiale fonctionne.
 
 ### SMS : fournisseur à choisir
 
@@ -249,6 +270,7 @@ Le bouton *Paramètres → Réinitialiser les données de démonstration* rechar
 - [ ] `STOCKAGE_DOSSIER` hors du dossier de l'application, inclus dans les sauvegardes
 - [ ] `https://reclamations.cosemad.sn/api/sante` répond `ok`
 - [ ] Les modèles de SMS des 3 sociétés renvoient vers `reclamations.cosemad.sn/suivi`
+- [ ] `npm run email:test` réussi pour CM, SON et FLS ; adresse de réponse renseignée pour chaque filiale
 - [ ] Comptes créés, responsables et équipes désignés, jours fériés de l'année saisis
 - [ ] Fournisseur SMS branché et `MESSAGERIE_MODE="production"`. Sinon, prévenir l'accueil : les clients ne
       reçoivent pas de SMS

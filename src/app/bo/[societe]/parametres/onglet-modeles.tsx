@@ -8,14 +8,15 @@ import { actionModeles } from "./actions";
 
 interface Props {
   slug: string;
-  modeles: { modeleSms: string; modeleEmailObjet: string; modeleEmail: string };
+  modeles: { modeleSms: string; modeleEmailObjet: string; modeleEmail: string; emailReponse: string };
+  nomSociete: string;
   delai: number;
   societe: string; // code (CM, SON, FLS) pour le numéro d'exemple
 }
 
 const MAX_SMS = 160;
 
-export function OngletModeles({ slug, modeles, delai, societe }: Props) {
+export function OngletModeles({ slug, modeles, delai, societe, nomSociete }: Props) {
   const [m, setM] = useState(modeles);
   const [enCours, lancer] = useOperation();
   const exemple = { numero: `${societe}-2026-0042`, nom: "Aminata Diop", date: formatDate(new Date()), delai };
@@ -96,6 +97,26 @@ export function OngletModeles({ slug, modeles, delai, societe }: Props) {
             {remplirModele(m.modeleEmail, exemple)}
           </div>
         </div>
+      </div>
+      <div className="flex max-w-xl flex-col gap-2">
+        <label htmlFor="tpl-reponse" className="font-semibold">
+          Adresse qui reçoit les réponses des clients
+        </label>
+        <input
+          id="tpl-reponse"
+          type="email"
+          value={m.emailReponse}
+          maxLength={254}
+          autoComplete="off"
+          placeholder="prenom.nom@exemple.sn"
+          aria-describedby="tpl-reponse-aide"
+          onChange={(e) => setM({ ...m, emailReponse: e.target.value })}
+          className="min-h-11 rounded-champ border border-bord-fort px-3.5"
+        />
+        <p id="tpl-reponse-aide" className="m-0 text-[0.8125rem] text-encre-3">
+          Quand un client de {nomSociete} clique sur « Répondre » dans un e-mail de la plateforme, sa réponse arrive à cette adresse. Laissez vide pour qu&apos;elle
+          arrive dans la boîte d&apos;envoi de la filiale.
+        </p>
       </div>
       <div className="flex justify-end">
         <button type="button" disabled={enCours || trop || inconnues.length > 0} onClick={() => lancer(() => actionModeles(slug, m))} className={BOUTON_PRINCIPAL}>

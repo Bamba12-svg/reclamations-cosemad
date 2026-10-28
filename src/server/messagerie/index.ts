@@ -43,12 +43,21 @@ export async function preparerMessage(client: ClientMessages, m: NouveauMessage)
 /** Envoie les messages en attente. Un échec est enregistré sur le message, jamais propagé. */
 export async function expedier(db: PrismaClient, messageIds: readonly string[]): Promise<void> {
   if (modeMessagerie() === "demo" || messageIds.length === 0) return;
-  const messages = await db.message.findMany({ where: { id: { in: [...messageIds] }, statut: "EN_ATTENTE" } });
+  const messages = await db.message.findMany({
+    where: { id: { in: [...messageIds] }, statut: "EN_ATTENTE" },
+    include: { societe: { select: { code: true, parametres: { select: { emailReponse: true } } } } },
+  });
   for (const m of messages) {
     const fournisseur = fournisseurPour(m.canal);
     try {
       if (!fournisseur) throw new Error(`Aucun fournisseur ${m.canal === "SMS" ? "SMS" : "e-mail"} n'est configuré.`);
-      const { idExterne } = await fournisseur.envoyer({ destinataire: m.destinataire, objet: m.objet, corps: m.corps });
+      const { idExterne } = await fournisseur.envoyer({
+        destinataire: m.destinataire,
+        objet: m.objet,
+        corps: m.corps,
+        societeCode: m.societe.code,
+        repondreA: m.societe.parametres?.emailReponse,
+      });
       await db.message.update({ where: { id: m.id }, data: { statut: "ENVOYE", envoyeLe: new Date(), idExterne: idExterne ?? null } });
     } catch (erreur) {
       const texte = erreur instanceof Error ? erreur.message : String(erreur);

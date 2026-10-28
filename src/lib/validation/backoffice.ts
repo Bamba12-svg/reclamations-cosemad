@@ -69,6 +69,14 @@ export const schemaModeles = z.object({
   modeleSms: modeleSansVariableInconnue(z.string().trim().min(10).max(160, { error: "Le SMS ne doit pas dépasser 160 caractères." })),
   modeleEmailObjet: modeleSansVariableInconnue(z.string().trim().min(3).max(150)),
   modeleEmail: modeleSansVariableInconnue(z.string().trim().min(10).max(3000)),
+  emailReponse: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(254)
+    .refine((v) => v === "" || z.email().safeParse(v).success, { error: "Adresse e-mail invalide." })
+    .transform((v) => v || null)
+    .default(""),
 });
 
 export const schemaUtilisateur = z.object({

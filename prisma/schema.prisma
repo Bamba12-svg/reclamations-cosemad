@@ -104,6 +104,7 @@ model ParametresSociete {
   modeleSms           String   @db.VarChar(160)
   modeleEmailObjet    String   @db.VarChar(150)
   modeleEmail         String   @db.Text
+  emailReponse        String?  @db.VarChar(254) // reçoit les réponses des clients (Répondre) ; vide : la boîte d'envoi
   updatedAt           DateTime @updatedAt @db.Timestamptz(3)
   updatedById         String?
 }

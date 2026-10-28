@@ -131,6 +131,7 @@ export async function donneesParametres(societeId: string) {
       modeleSms: parametres?.modeleSms ?? "",
       modeleEmailObjet: parametres?.modeleEmailObjet ?? "",
       modeleEmail: parametres?.modeleEmail ?? "",
+      emailReponse: parametres?.emailReponse ?? "",
     },
     feries: feries.map((f) => ({ date: f.date.toISOString().slice(0, 10), affichage: formatDate(f.date), libelle: f.libelle })),
     icones,

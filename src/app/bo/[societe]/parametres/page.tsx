@@ -58,7 +58,7 @@ export default async function Parametres({ params, searchParams }: { params: Pro
           {onglet === "activites" && <OngletActivites slug={slug} societe={d.societe.nom} activites={d.activites} personnes={personnes} icones={d.icones} />}
           {onglet === "utilisateurs" && <OngletUtilisateurs slug={slug} utilisateurs={d.utilisateurs} moi={acteur.id} societe={d.societe.nom} />}
           {onglet === "delais" && <OngletDelais slug={slug} delais={d.delais} feries={d.feries} />}
-          {onglet === "modeles" && <OngletModeles slug={slug} modeles={d.modeles} delai={d.delais.delaiReponseJO} societe={d.societe.code} />}
+          {onglet === "modeles" && <OngletModeles slug={slug} modeles={d.modeles} delai={d.delais.delaiReponseJO} societe={d.societe.code} nomSociete={d.societe.nom} />}
         </div>
       </section>
     </ZoneParametres>
