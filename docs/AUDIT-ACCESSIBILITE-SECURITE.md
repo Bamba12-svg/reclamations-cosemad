@@ -53,16 +53,18 @@
 | **Traçabilité** | Journal d'audit en ajout seul, écrit dans la même transaction que l'opération : connexions, échecs, consultations de pièces, exports, paramètres. |
 | **Comptes** | Mots de passe provisoires aléatoires, affichés une seule fois, jamais stockés en clair. **Remplacement obligatoire à la première connexion** (et après chaque réinitialisation) : jusque-là, toutes les pages, actions et pièces jointes sont refusées. Le nouveau mot de passe : 10 caractères minimum, lettres et chiffres, différent du provisoire. Impossible de se retirer ses propres droits ou de désactiver le dernier compte QHSE. |
 
-### Dépendances (`npm audit --omit=dev`, 15/10/2026)
+### Dépendances (`npm audit --omit=dev`, mise à jour du 28/10/2026)
 
 | Paquet | Gravité | Analyse |
 |---|---|---|
-| `prisma` (via `deepmerge-ts`, `mysql2`) | élevée | Outil en ligne de commande (migrations), jamais exposé aux requêtes des utilisateurs. `mysql2` n'est pas utilisé (base PostgreSQL). Corrigé dans Prisma 7.10.1, publié le jour de l'audit : **passer à 7.10.1 fin octobre** pour `prisma`, `@prisma/client` et `@prisma/adapter-pg` ensemble. |
-| `exceljs` (via `uuid` < 11.1.1) | modérée | La faille ne concerne que les UUID v3/v5/v6 avec tampon fourni. exceljs n'utilise que la v4 : non exploitable. La seule « correction » proposée rétrograde exceljs en 3.4 : ne pas lancer `npm audit fix --force`. |
+| `prisma`, `@prisma/client`, `@prisma/adapter-pg` | — | Passés ensemble en **7.10.1** : les alertes de `deepmerge-ts` et `mysql2` sont corrigées. |
+| `nodemailer` | — | Passé en **10.1.7** : corrige trois failles de lecture des adresses (`addressparser`) présentes jusqu'à la 10.1.3. |
+| `fast-uri` (via l'outil `prisma`) | — | Imposé en **3.1.9** par une règle `overrides`. Outil en ligne de commande seulement. |
+| `exceljs` (via `uuid` < 11.1.1) | modérée | **Seule alerte restante.** La faille ne concerne que les UUID v3/v5/v6 avec tampon fourni. exceljs n'utilise que la v4 : non exploitable. La seule « correction » proposée rétrograde exceljs en 3.4 : ne pas lancer `npm audit fix --force`. |
 
-`nodemailer` (envoi des e-mails) est figé en 10.0.13, sans alerte connue. next-auth le déclare en dépendance facultative
-limitée à la version 8, qui a des failles connues. Une règle `overrides` du `package.json` impose donc la version 10
-partout, sans effet sur la connexion : le fournisseur e-mail de next-auth n'est pas utilisé.
+`nodemailer` et `fast-uri` sont figés par la section `overrides` du `package.json`. next-auth déclare nodemailer en
+dépendance facultative limitée à la version 8, qui a des failles connues : la règle impose la version 10 partout, sans
+effet sur la connexion, car le fournisseur e-mail de next-auth n'est pas utilisé.
 
 ### Recommandations restantes
 

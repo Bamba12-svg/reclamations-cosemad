@@ -11,7 +11,7 @@ portail client public (dépôt et suivi) et back-office des collaborateurs (proc
 | TypeScript (strict) | 5.9.3 |
 | Tailwind CSS | 4.3.3 |
 | PostgreSQL | 17 ou 18 en local, Neon en ligne |
-| Prisma + @prisma/adapter-pg | 7.10.0 |
+| Prisma + @prisma/adapter-pg | 7.10.1 |
 | ESLint | 9.39.5 |
 | Node.js | 22.18 ou plus (CI : 22, production Infomaniak : 24) |
 
