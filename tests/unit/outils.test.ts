@@ -16,7 +16,7 @@ describe("numéros de réclamation", () => {
 });
 
 describe("modèles de messages", () => {
-  const sms = "Carrefour Médical : votre réclamation {numero} est bien reçue. Réponse sous {delai} jours ouvrés. Suivi : cosemad.sn/suivi";
+  const sms = "Carrefour Médical : votre réclamation {numero} est bien reçue. Réponse sous {delai} jours ouvrés. Suivi : reclamations.cosemad.sn/suivi";
 
   it("remplit les variables et laisse les inconnues telles quelles", () => {
     expect(remplirModele("{nom} · {numero} · {date} · {delai} · {autre}", { numero: "CM-2026-0042", nom: "Aminata Diop", date: "28/09/2026", delai: 5 })).toBe(

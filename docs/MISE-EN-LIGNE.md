@@ -48,8 +48,20 @@ ni modifié ni dupliqué. **Ne lancez jamais `npm run db:seed` sur la base de pr
 ### Création
 
 Dans le Manager : **Hébergement Web → Ajouter un site → Node.js**. Choisissez **Node.js 24** (LTS) et le nom de
-domaine (par exemple `reclamations.cosemad.sn`). Activez le **certificat SSL** (Let's Encrypt) : le site doit être
+domaine validé : **`reclamations.cosemad.sn`**. Activez le **certificat SSL** (Let's Encrypt) : le site doit être
 servi uniquement en HTTPS (l'application envoie l'en-tête HSTS).
+
+### Nom de domaine
+
+L'application est servie sur le sous-domaine **`reclamations.cosemad.sn`**. Le site du groupe (`cosemad.sn`) et les
+adresses e-mail `@cosemad.sn` ne changent pas.
+
+- **Si `cosemad.sn` est géré chez Infomaniak** : le sous-domaine est relié automatiquement à la création du site.
+- **Sinon** : Infomaniak affiche l'enregistrement DNS à créer (en général un `CNAME` ou un `A` pour `reclamations`).
+  Ajoutez-le dans la zone DNS de `cosemad.sn`, chez le gestionnaire du domaine. Comptez quelques minutes à quelques
+  heures de propagation, puis activez le certificat SSL.
+
+Adresses publiques : `/carrefour-medical`, `/sonerco`, `/fls` (portails), `/suivi` (lien des SMS), `/bo` (back-office).
 
 ### Code
 
@@ -110,7 +122,8 @@ Enregistrez, lancez la construction, puis **démarrez** le site.
      son propre mot de passe à sa première connexion : tant qu'elle ne l'a pas fait, elle n'accède à rien d'autre ;
    - désignez le responsable et les membres des équipes de chaque activité ;
    - ajoutez les jours fériés à date variable de l'année (Korité, Tabaski, Tamkharit, Maouloud, Magal…) ;
-   - relisez les modèles de SMS. L'écran signale les caractères qui doublent le prix d'un SMS.
+   - relisez les modèles de SMS : ils indiquent `reclamations.cosemad.sn/suivi`. L'écran signale les caractères
+     qui doublent le prix d'un SMS.
 5. Faites un dépôt test sur le portail, traitez-le jusqu'à la clôture, puis supprimez-le si besoin.
 
 ---
@@ -234,7 +247,8 @@ Le bouton *Paramètres → Réinitialiser les données de démonstration* rechar
 - [ ] `AUTH_SECRET` propre au serveur, 32 caractères ou plus
 - [ ] HTTPS actif (certificat SSL), le site redirige `http://` vers `https://`
 - [ ] `STOCKAGE_DOSSIER` hors du dossier de l'application, inclus dans les sauvegardes
-- [ ] `/api/sante` répond `ok`
+- [ ] `https://reclamations.cosemad.sn/api/sante` répond `ok`
+- [ ] Les modèles de SMS des 3 sociétés renvoient vers `reclamations.cosemad.sn/suivi`
 - [ ] Comptes créés, responsables et équipes désignés, jours fériés de l'année saisis
 - [ ] Fournisseur SMS branché et `MESSAGERIE_MODE="production"`. Sinon, prévenir l'accueil : les clients ne
       reçoivent pas de SMS

@@ -11,7 +11,7 @@ export const COOKIE_PORTAIL = "cosemad_portail";
 export function EnTetePortail({ slug, nom, logo }: { slug: string; nom: string; logo: string }) {
   const chemin = usePathname();
   const accueil = `/${slug}`;
-  // Mémorise la société pour les liens génériques (cosemad.sn/suivi du SMS).
+  // Mémorise la société pour les liens génériques (reclamations.cosemad.sn/suivi du SMS).
   useEffect(() => {
     document.cookie = `${COOKIE_PORTAIL}=${slug}; path=/; max-age=31536000; samesite=lax`;
   }, [slug]);

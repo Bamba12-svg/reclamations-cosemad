@@ -7,7 +7,7 @@ import { societesPortail } from "@/server/portail";
 export const dynamic = "force-dynamic";
 
 /**
- * Lien du SMS (cosemad.sn/suivi) : ouvre le suivi de la bonne société.
+ * Lien du SMS (reclamations.cosemad.sn/suivi) : ouvre le suivi de la bonne société.
  * Le préfixe du numéro (?numero=FLS-…) l'emporte, sinon la dernière société consultée.
  */
 export default async function SuiviGenerique({ searchParams }: { searchParams: Promise<{ numero?: string }> }) {

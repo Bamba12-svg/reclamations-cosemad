@@ -101,6 +101,16 @@ function creerDecaleur(jourMaquette: string, aujourdhui: string) {
   return { ecart, instant, jour };
 }
 
+/**
+ * Adresse publique du portail (sous-domaine validé : reclamations.cosemad.sn). Elle remplace le lien
+ * « cosemad.sn/suivi » de la maquette dans le modèle de SMS par défaut. Modifiable ensuite par le QHSE
+ * (Paramètres → Modèles SMS et e-mail).
+ */
+export const DOMAINE_PORTAIL = process.env.PORTAIL_DOMAINE?.trim() || "reclamations.cosemad.sn";
+export function smsParDefaut(modele: string): string {
+  return modele.replace("cosemad.sn/suivi", `${DOMAINE_PORTAIL}/suivi`);
+}
+
 export function aujourdhuiDakar(): string {
   return new Date().toISOString().slice(0, 10); // Dakar est à UTC+0 toute l'année
 }
@@ -185,7 +195,7 @@ async function chargerSociete(
           delaiQualificationH: s.defaults.delais.qual,
           delaiReponseJO: s.defaults.delais.rep,
           delaiClotureJ: s.defaults.delais.clo,
-          modeleSms: s.defaults.sms,
+          modeleSms: smsParDefaut(s.defaults.sms),
           modeleEmailObjet: `${s.nom} : votre réclamation {numero} est bien reçue`,
           modeleEmail: s.defaults.mail,
         },

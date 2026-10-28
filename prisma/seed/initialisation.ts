@@ -15,7 +15,7 @@ import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../src/generated/prisma/client";
 import donneesBrutes from "./donnees-maquette.json";
-import { aujourdhuiDakar, FERIES_FIXES, META_SOCIETES } from "./demonstration";
+import { aujourdhuiDakar, FERIES_FIXES, META_SOCIETES, smsParDefaut } from "./demonstration";
 import type { DonneesMaquette } from "./types";
 
 async function main() {
@@ -47,7 +47,7 @@ async function main() {
               delaiQualificationH: s.defaults.delais.qual,
               delaiReponseJO: s.defaults.delais.rep,
               delaiClotureJ: s.defaults.delais.clo,
-              modeleSms: s.defaults.sms,
+              modeleSms: smsParDefaut(s.defaults.sms),
               modeleEmailObjet: `${s.nom} : votre réclamation {numero} est bien reçue`,
               modeleEmail: s.defaults.mail,
             },
