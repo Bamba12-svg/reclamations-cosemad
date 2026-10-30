@@ -61,7 +61,8 @@ adresses e-mail `@cosemad.sn` ne changent pas.
   Ajoutez-le dans la zone DNS de `cosemad.sn`, chez le gestionnaire du domaine. Comptez quelques minutes à quelques
   heures de propagation, puis activez le certificat SSL.
 
-Adresses publiques : `/carrefour-medical`, `/sonerco`, `/fls` (portails), `/suivi` (lien des SMS), `/bo` (back-office).
+Adresses publiques : `/` (page de choix de la société), `/carrefour-medical`, `/sonerco`, `/fls` (portails), `/suivi`
+(lien des SMS), `/bo` (back-office).
 
 Le portail ne contient **aucun lien** vers le back-office (sauf en démonstration) : donnez aux collaborateurs l'adresse
 `https://reclamations.cosemad.sn/bo`, à mettre en favori. Chaque filiale peut ajouter sur son site un bouton

@@ -41,10 +41,14 @@ $psql = "C:\Program Files\PostgreSQL\18\bin\psql.exe"
 ### 3. Projet
 
 ```powershell
-cd C:\chemin\vers\reclamations-cosemad
+git clone https://github.com/Bamba12-svg/reclamations-cosemad.git
+cd reclamations-cosemad
 Copy-Item .env.example .env
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+#   → copiez la valeur affichée dans AUTH_SECRET="…" du fichier .env
 npm install
-npm run db:migrate -- --name init     # crée les tables (la première fois uniquement)
+npm run db:deploy                     # crée les tables (migrations du dépôt)
+npm run db:seed                       # données de démonstration
 npm run dev
 ```
 

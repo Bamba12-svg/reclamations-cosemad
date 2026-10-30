@@ -9,6 +9,7 @@ export const ICONES = {
   cloche: "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0",
   chevronBas: "m6 9 6 6 6-6",
   chevronGauche: "m15 18-6-6 6-6",
+  chevronDroite: "m9 18 6-6-6-6",
   deconnexion: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   panneau: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18",
   tableauDeBord:
