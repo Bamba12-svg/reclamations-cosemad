@@ -46,7 +46,8 @@ export function OngletMessagerie({ slug, societe, messagerie }: Props) {
       <div className="flex flex-col gap-1">
         <h2 className="m-0 text-[1.0625rem]">Messagerie de {societe}</h2>
         <p className="m-0 text-sm text-encre-3">
-          L&apos;adresse depuis laquelle la plateforme écrit aux clients de {societe} (accusé de réception, réponse), et celle qui reçoit leurs réponses.
+          L&apos;adresse depuis laquelle la plateforme écrit aux clients de {societe} (accusé de réception, réponse), et celle qui est prévenue de chaque nouvelle
+          réclamation.
         </p>
       </div>
 
@@ -116,7 +117,7 @@ export function OngletMessagerie({ slug, societe, messagerie }: Props) {
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="msg-reponse" className="font-semibold">
-            Adresse qui reçoit les réponses des clients
+            Adresse de la filiale pour les réclamations
           </label>
           <input
             id="msg-reponse"
@@ -131,7 +132,7 @@ export function OngletMessagerie({ slug, societe, messagerie }: Props) {
             className={CHAMP}
           />
           <p id="msg-reponse-aide" className="m-0 text-[0.8125rem] text-encre-3">
-            Quand un client clique sur « Répondre », son message arrive ici.
+            Reçoit un e-mail à chaque nouvelle réclamation, ainsi que les réponses des clients. Vide : la boîte d&apos;envoi.
           </p>
         </div>
       </div>

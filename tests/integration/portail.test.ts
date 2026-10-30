@@ -85,6 +85,33 @@ describe("portail : dépôt puis suivi (base réelle)", () => {
     expect(await db.journalAudit.count({ where: { entiteId: enBase.id, action: "reclamation.deposer" } })).toBe(1);
   });
 
+  it("prévient la filiale par e-mail de chaque nouvelle réclamation (alerte interne, jamais montrée au client)", async () => {
+    await db.parametresSociete.update({ where: { societeId: societe.id }, data: { emailReponse: "qualite@test.sn" } });
+    process.env.URL_PUBLIQUE = "https://reclamations.cosemad.sn/";
+    try {
+      const r = await deposerReclamation(depot({ description: "Livreur arrivé avec <b>deux</b> jours de retard." }), [], { ip: null, userAgent: null });
+      expect(r.ok).toBe(true);
+      if (!r.ok) return;
+      const messages = await db.message.findMany({ where: { reclamation: { numero: r.numero } }, orderBy: { createdAt: "asc" } });
+      expect(messages.map((m) => `${m.canal}:${m.interne ? "interne" : "client"}:${m.destinataire}`)).toEqual([
+        "SMS:client:+221774123508",
+        "EMAIL:client:awa@test.sn",
+        "EMAIL:interne:qualite@test.sn",
+      ]);
+      const alerte = messages[2]!;
+      expect(alerte.objet).toBe(`Nouvelle réclamation ${r.numero} · Test Livraison`);
+      expect(alerte.corps).toContain(`Numéro : ${r.numero}`);
+      expect(alerte.corps).toContain("Client : Grossiste Test (Awa Ndiaye) · +221 77 412 35 08 · awa@test.sn");
+      expect(alerte.corps).toContain("Livreur arrivé avec <b>deux</b> jours de retard."); // texte brut, tel quel
+      expect(alerte.corps).toContain(`Ouvrir la fiche : https://reclamations.cosemad.sn/bo/${societe.slug}/reclamations/${r.numero}`);
+      // Le client ne voit que ses propres messages.
+      expect(r.messages?.email).not.toContain("Nouvelle réclamation");
+    } finally {
+      delete process.env.URL_PUBLIQUE;
+      await db.parametresSociete.update({ where: { societeId: societe.id }, data: { emailReponse: null } });
+    }
+  });
+
   it("refuse un faux fichier sans rien enregistrer", async () => {
     const avant = await db.reclamation.count({ where: { societeId: societe.id } });
     const r = await deposerReclamation(depot(), [{ nom: "facture.pdf", octets: new TextEncoder().encode("<html>") }], { ip: null, userAgent: null });

@@ -20,6 +20,7 @@ export interface NouveauMessage {
   destinataire: string; // E.164 pour un SMS, adresse pour un e-mail
   objet?: string | null; // e-mail uniquement
   corps: string;
+  interne?: boolean; // alerte à la filiale, pas un message au client
 }
 
 type ClientMessages = Pick<Prisma.TransactionClient, "message">;
@@ -34,6 +35,7 @@ export async function preparerMessage(client: ClientMessages, m: NouveauMessage)
       destinataire: m.destinataire,
       objet: m.canal === "EMAIL" ? (m.objet ?? null) : null,
       corps: m.corps,
+      interne: m.interne ?? false,
       statut: demo ? "DEMO" : "EN_ATTENTE",
       fournisseur: demo ? "demo" : fournisseurPour(m.canal)?.nom ?? "aucun",
       envoyeLe: demo ? new Date() : null,
@@ -64,7 +66,7 @@ export async function expedier(db: PrismaClient, messageIds: readonly string[]):
         objet: m.objet,
         corps: m.corps,
         societeCode: m.societe.code,
-        repondreA: m.societe.parametres?.emailReponse,
+        repondreA: m.interne ? null : m.societe.parametres?.emailReponse,
         smtp: m.canal === "EMAIL" ? configurationPourSociete(m.societe.code, m.societe.parametres) : null,
       });
       await db.message.update({ where: { id: m.id }, data: { statut: "ENVOYE", envoyeLe: new Date(), idExterne: idExterne ?? null } });

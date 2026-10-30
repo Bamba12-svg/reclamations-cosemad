@@ -12,6 +12,7 @@ import { responsablesPossibles } from "./fiche/responsables";
 import type { ContexteRequete } from "./fiche/operations";
 import { ajouterEvenement, journaliser } from "./journal";
 import { expedier, preparerMessage } from "./messagerie";
+import { alerterNouvelleReclamation } from "./messagerie/notification";
 import { delaisSociete } from "./requetes/contexte-societe";
 import { empreinteSha256, nouvelleCle, stockage } from "./stockage";
 import { controlerFichier, MAX_PIECES_PAR_DEPOT } from "./stockage/controle";
@@ -72,7 +73,7 @@ export async function saisirReclamation(
   }
 
   const [societe, parametres, delais] = await Promise.all([
-    db.societe.findUniqueOrThrow({ where: { id: societeId }, select: { id: true, code: true } }),
+    db.societe.findUniqueOrThrow({ where: { id: societeId }, select: { id: true, code: true, nom: true, slug: true } }),
     db.parametresSociete.findUnique({ where: { societeId } }),
     delaisSociete(societeId),
   ]);
@@ -136,6 +137,21 @@ export async function saisirReclamation(
       }
       await ajouterEvenement(tx, r.id, `Confirmation envoyée au client (SMS${messages.length > 1 ? " + e-mail" : ""})`, "Système", maintenant);
       if (responsable) await ajouterEvenement(tx, r.id, `Affectée à ${responsable.nom} (${activite.nom})`, qui, maintenant);
+      const alerte = await alerterNouvelleReclamation(tx, {
+        societe: { id: societe.id, nom: societe.nom, slug: societe.slug },
+        parametres,
+        reclamationId: r.id,
+        numero,
+        recueLe,
+        mode: d.mode,
+        activite: activite.nom,
+        type: d.type,
+        sousType: d.type === "PRODUIT" ? (d.sousType ?? null) : null,
+        client: { nom: d.nom, telephone: d.telephone, email: d.email },
+        description: d.description,
+        piecesJointes: pieces.length,
+      });
+      if (alerte) messages.push(alerte);
       await journaliser(tx, {
         action: "reclamation.saisir",
         entite: "Reclamation",

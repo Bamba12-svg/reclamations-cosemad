@@ -29,7 +29,7 @@ export default async function FicheReclamation({
 /** Juste après une saisie à l'accueil : SMS et e-mail de confirmation envoyés au client (bandeau de la maquette). */
 async function confirmationSaisie(numero: string): Promise<Confirmation | null> {
   const messages = await db.message.findMany({
-    where: { reclamation: { numero }, createdAt: { gte: new Date(Date.now() - 15 * 60_000) } },
+    where: { reclamation: { numero }, interne: false, createdAt: { gte: new Date(Date.now() - 15 * 60_000) } },
     orderBy: { createdAt: "asc" },
     select: { canal: true, destinataire: true, corps: true },
   });

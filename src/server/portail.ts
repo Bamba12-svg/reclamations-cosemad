@@ -10,6 +10,7 @@ import { etapesClient } from "./domaine/statut";
 import { prochainNumero } from "./domaine/numerotation";
 import { ajouterEvenement, journaliser } from "./journal";
 import { expedier, preparerMessage } from "./messagerie";
+import { alerterNouvelleReclamation } from "./messagerie/notification";
 import { controlerFichier, MAX_PIECES_PAR_DEPOT } from "./stockage/controle";
 import { empreinteSha256, nouvelleCle, stockage } from "./stockage";
 import { delaisSociete } from "./requetes/contexte-societe";
@@ -133,6 +134,21 @@ export async function deposerReclamation(d: DepotPortail, fichiers: FichierRecu[
         messages.push(await preparerMessage(tx, { societeId: societe.id, reclamationId: r.id, canal: "EMAIL", destinataire: d.email, objet, corps: email }));
       }
       await ajouterEvenement(tx, r.id, `Confirmation envoyée au client (SMS${email ? " + e-mail" : ""})`, "Système", maintenant);
+      const alerte = await alerterNouvelleReclamation(tx, {
+        societe: { id: societe.id, nom: societe.nom, slug: societe.slug },
+        parametres,
+        reclamationId: r.id,
+        numero,
+        recueLe: maintenant,
+        mode: "PLATEFORME_WEB",
+        activite: activite.nom,
+        type: d.type,
+        sousType: d.type === "PRODUIT" ? (d.sousType ?? null) : null,
+        client: { nom: societeClient && d.contactNom ? `${d.nom} (${d.contactNom})` : d.nom, telephone: d.telephone, email: d.email },
+        description: d.description,
+        piecesJointes: pieces.length,
+      });
+      if (alerte) messages.push(alerte);
       await journaliser(tx, {
         action: "reclamation.deposer",
         entite: "Reclamation",

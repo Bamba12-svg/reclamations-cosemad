@@ -364,6 +364,7 @@ model Message {
   corps         String        @db.Text
   statut        StatutMessage
   fournisseur   String // « demo », « orange », « smtp »…
+  interne       Boolean       @default(false) // alerte à la filiale (nouvelle réclamation), pas un message au client
   idExterne     String?
   erreur        String?
   createdAt     DateTime      @default(now()) @db.Timestamptz(3)
