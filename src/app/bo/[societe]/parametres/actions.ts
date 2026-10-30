@@ -13,10 +13,12 @@ import {
   creerActivite,
   creerUtilisateur,
   enregistrerDelais,
+  enregistrerMessagerie,
   enregistrerModeles,
   modifierActivite,
   reinitialiserMotDePasse,
   supprimerJourFerie,
+  testerMessagerie,
   type ContexteParametres,
   type ResultatParametres,
 } from "@/server/parametres";
@@ -42,6 +44,8 @@ async function lancer(
 }
 
 export const actionDelais = async (slug: string, saisie: unknown) => lancer(slug, (a, s, c) => enregistrerDelais(a, s, saisie, c));
+export const actionMessagerie = async (slug: string, saisie: unknown) => lancer(slug, (a, s, c) => enregistrerMessagerie(a, s, saisie, c));
+export const actionTesterMessagerie = async (slug: string) => lancer(slug, (a, s, c) => testerMessagerie(a, s, c));
 export const actionModeles = async (slug: string, saisie: unknown) => lancer(slug, (a, s, c) => enregistrerModeles(a, s, saisie, c));
 export const actionAjouterFerie = async (slug: string, saisie: unknown) => lancer(slug, (a, s, c) => ajouterJourFerie(a, s, saisie, c));
 export const actionSupprimerFerie = async (slug: string, jour: string) => lancer(slug, (a, s, c) => supprimerJourFerie(a, s, String(jour), c));

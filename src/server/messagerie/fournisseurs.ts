@@ -1,9 +1,9 @@
 import type { Canal } from "@/generated/prisma/client";
-import { fournisseurSmtp } from "./smtp";
+import { fournisseurSmtp, type ConfigurationSmtp } from "./smtp";
 
 /**
  * Interface commune aux fournisseurs d'envoi.
- *  - E-mail : serveur SMTP (smtp.ts), une boîte par filiale ou une boîte commune, réglées dans .env.
+ *  - E-mail : serveur SMTP (smtp.ts), une boîte par filiale saisie dans Paramètres → Messagerie (ou .env).
  *  - SMS : fournisseur à choisir (Orange, Free, agrégateur…) — il suffira d'ajouter ici une
  *    implémentation de FournisseurMessage pour le canal SMS.
  */
@@ -13,6 +13,7 @@ export interface MessageAEnvoyer {
   corps: string;
   societeCode?: string; // CM, SON, FLS : choisit la boîte d'envoi de la filiale
   repondreA?: string | null; // adresse qui reçoit les réponses du client (Paramètres de la société)
+  smtp?: ConfigurationSmtp | null; // boîte d'envoi résolue (Paramètres, sinon .env)
 }
 
 export interface FournisseurMessage {
@@ -22,7 +23,7 @@ export interface FournisseurMessage {
 }
 
 export function fournisseurPour(canal: Canal): FournisseurMessage | undefined {
-  if (canal === "EMAIL") return fournisseurSmtp() ?? undefined;
+  if (canal === "EMAIL") return fournisseurSmtp();
   return undefined; // SMS : fournisseur à brancher
 }
 

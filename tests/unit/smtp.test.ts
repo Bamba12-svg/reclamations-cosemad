@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fournisseurPour } from "@/server/messagerie/fournisseurs";
-import { configurationSmtp } from "@/server/messagerie/smtp";
-import { schemaModeles } from "@/lib/validation/backoffice";
+import { configurationPourSociete, configurationSmtp } from "@/server/messagerie/smtp";
+import { schemaMessagerie } from "@/lib/validation/backoffice";
+import { chiffrer, dechiffrer } from "@/server/messagerie/chiffrement";
 
 describe("fournisseur e-mail SMTP", () => {
   const sauvegarde = { ...process.env };
@@ -10,10 +11,10 @@ describe("fournisseur e-mail SMTP", () => {
   });
   const sansSmtp = () => Object.fromEntries(Object.entries(sauvegarde).filter(([k]) => !k.startsWith("SMTP_") && !k.startsWith("EMAIL_"))) as NodeJS.ProcessEnv;
 
-  it("inactif tant qu'aucun serveur SMTP n'est renseigné", () => {
+  it("sans boîte (ni Paramètres ni .env), l'envoi échoue avec un message clair", async () => {
     process.env = sansSmtp();
     expect(configurationSmtp()).toBeNull();
-    expect(fournisseurPour("EMAIL")).toBeUndefined();
+    await expect(fournisseurPour("EMAIL")!.envoyer({ destinataire: "a@b.sn", objet: "x", corps: "y", societeCode: "CM" })).rejects.toThrow(/Paramètres → Messagerie/);
   });
 
   it("boîte commune (465 = SSL, sinon STARTTLS) ; le SMS reste à brancher", () => {
@@ -56,10 +57,28 @@ describe("fournisseur e-mail SMTP", () => {
     expect(configurationSmtp("FLS")).toBeNull();
   });
 
-  it("adresse de réponse de la filiale : facultative, contrôlée", () => {
-    const base = { modeleSms: "Réclamation {numero} reçue.", modeleEmailObjet: "Réclamation {numero}", modeleEmail: "Bonjour {nom}, réclamation {numero} reçue." };
-    expect(schemaModeles.parse({ ...base, emailReponse: "" }).emailReponse).toBeNull();
-    expect(schemaModeles.parse({ ...base, emailReponse: " Awa.Ba@CarrefourMedical.sn " }).emailReponse).toBe("awa.ba@carrefourmedical.sn");
-    expect(schemaModeles.safeParse({ ...base, emailReponse: "pas-une-adresse" }).success).toBe(false);
+  it("Paramètres → Messagerie : saisie contrôlée (adresse, serveur public, ports chiffrés)", () => {
+    const ok = schemaMessagerie.parse({ emailEnvoi: " Awa.Ba@CarrefourMedical.sn ", motDePasse: "x", nomExpediteur: "Carrefour Médical", hote: "Mail.Infomaniak.com", port: "465", emailReponse: "" });
+    expect(ok).toEqual({ emailEnvoi: "awa.ba@carrefourmedical.sn", motDePasse: "x", nomExpediteur: "Carrefour Médical", hote: "mail.infomaniak.com", port: 465, emailReponse: null });
+    expect(schemaMessagerie.parse({ emailEnvoi: "" }).emailEnvoi).toBeNull();
+    for (const hote of ["localhost", "127.0.0.1", "10.0.0.5", "serveur.local", "mail"]) expect(schemaMessagerie.safeParse({ emailEnvoi: "a@b.sn", hote }).success).toBe(false);
+    expect(schemaMessagerie.safeParse({ emailEnvoi: "a@b.sn", port: 25 }).success).toBe(false);
+    expect(schemaMessagerie.safeParse({ emailEnvoi: "a@b.sn", nomExpediteur: 'X" <pirate@x.sn>' }).success).toBe(false);
+    expect(schemaMessagerie.safeParse({ emailEnvoi: "pas-une-adresse" }).success).toBe(false);
+  });
+
+  it("boîte saisie dans les Paramètres : mot de passe chiffré, prioritaire sur le .env", () => {
+    process.env = { ...sansSmtp(), AUTH_SECRET: "s".repeat(40), SMTP_HOTE: "mail.infomaniak.com", SMTP_UTILISATEUR: "contact@cosemad.sn", SMTP_MOT_DE_PASSE: "commun" };
+    const chiffre = chiffrer("MotDePasse-CM-2026");
+    expect(chiffre).not.toContain("MotDePasse");
+    expect(dechiffrer(chiffre)).toBe("MotDePasse-CM-2026");
+    const p = { smtpHote: "mail.infomaniak.com", smtpPort: 465, smtpUtilisateur: "awa.ba@carrefourmedical.sn", smtpMotDePasse: chiffre, emailNomExpediteur: "Carrefour Médical – Réclamations", emailReponse: "qualite@carrefourmedical.sn" };
+    expect(configurationPourSociete("CM", p)).toMatchObject({ utilisateur: "awa.ba@carrefourmedical.sn", motDePasse: "MotDePasse-CM-2026", expediteur: '"Carrefour Médical – Réclamations" <awa.ba@carrefourmedical.sn>', reponse: "qualite@carrefourmedical.sn" });
+    expect(configurationPourSociete("CM", null)?.utilisateur).toBe("contact@cosemad.sn"); // rien dans les Paramètres : .env
+    // Valeur altérée ou clé changée : illisible, jamais un mot de passe faux envoyé au serveur.
+    expect(dechiffrer(chiffre.slice(0, -4) + "AAAA")).toBeNull();
+    process.env.AUTH_SECRET = "t".repeat(40);
+    expect(dechiffrer(chiffre)).toBeNull();
+    expect(configurationPourSociete("CM", p)?.utilisateur).toBe("contact@cosemad.sn");
   });
 });

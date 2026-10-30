@@ -1,6 +1,7 @@
 import "server-only";
 import type { Canal, Message, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { fournisseurPour, modeMessagerie } from "./fournisseurs";
+import { configurationPourSociete } from "./smtp";
 
 /**
  * Envoi des SMS et e-mails, en deux temps (modèle « boîte d'envoi ») :
@@ -45,7 +46,14 @@ export async function expedier(db: PrismaClient, messageIds: readonly string[]):
   if (modeMessagerie() === "demo" || messageIds.length === 0) return;
   const messages = await db.message.findMany({
     where: { id: { in: [...messageIds] }, statut: "EN_ATTENTE" },
-    include: { societe: { select: { code: true, parametres: { select: { emailReponse: true } } } } },
+    include: {
+      societe: {
+        select: {
+          code: true,
+          parametres: { select: { emailReponse: true, smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true } },
+        },
+      },
+    },
   });
   for (const m of messages) {
     const fournisseur = fournisseurPour(m.canal);
@@ -57,6 +65,7 @@ export async function expedier(db: PrismaClient, messageIds: readonly string[]):
         corps: m.corps,
         societeCode: m.societe.code,
         repondreA: m.societe.parametres?.emailReponse,
+        smtp: m.canal === "EMAIL" ? configurationPourSociete(m.societe.code, m.societe.parametres) : null,
       });
       await db.message.update({ where: { id: m.id }, data: { statut: "ENVOYE", envoyeLe: new Date(), idExterne: idExterne ?? null } });
     } catch (erreur) {

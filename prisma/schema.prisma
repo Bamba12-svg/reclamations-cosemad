@@ -105,6 +105,12 @@ model ParametresSociete {
   modeleEmailObjet    String   @db.VarChar(150)
   modeleEmail         String   @db.Text
   emailReponse        String?  @db.VarChar(254) // reçoit les réponses des clients (Répondre) ; vide : la boîte d'envoi
+  // Boîte d'envoi des e-mails de la filiale (Paramètres → Messagerie). Mot de passe chiffré (AES-256-GCM).
+  smtpHote            String?  @db.VarChar(255)
+  smtpPort            Int?
+  smtpUtilisateur     String?  @db.VarChar(254)
+  smtpMotDePasse      String?  @db.Text
+  emailNomExpediteur  String?  @db.VarChar(120)
   updatedAt           DateTime @updatedAt @db.Timestamptz(3)
   updatedById         String?
 }

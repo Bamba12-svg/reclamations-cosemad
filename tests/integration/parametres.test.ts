@@ -11,11 +11,13 @@ import {
   creerUtilisateur,
   donneesParametres,
   enregistrerDelais,
+  enregistrerMessagerie,
   enregistrerModeles,
   modifierActivite,
   motDePasseProvisoire,
   reinitialiserMotDePasse,
   supprimerJourFerie,
+  testerMessagerie,
 } from "@/server/parametres";
 import { creerSocieteDeTest, db, supprimerSociete } from "./base";
 
@@ -117,6 +119,55 @@ describe("paramètres QHSE (base réelle)", () => {
     expect(await db.journalAudit.count({ where: { action: "auth.mot-de-passe-choisi", userId: nouveauId } })).toBe(1);
     // Une seule fois : ce n'est pas un moyen de changer de mot de passe sans connaître l'actuel.
     expect(await changer("Autre2026xx")).toEqual({ ok: false, erreur: "Votre mot de passe a déjà été choisi." });
+  });
+
+  it("messagerie de la filiale : saisie par le QHSE, mot de passe chiffré et jamais journalisé", async () => {
+    if ((process.env.AUTH_SECRET ?? "").length < 32) process.env.AUTH_SECRET = "cle-de-test-".repeat(4);
+    const demo = process.env.DEMO_EN_LIGNE;
+    delete process.env.DEMO_EN_LIGNE;
+    try {
+      const boite = { emailEnvoi: `envoi-${suffixe}@filiale.sn`, motDePasse: "Secret-Boite-2026", nomExpediteur: "Filiale – Réclamations", hote: "mail.infomaniak.com", port: 465, emailReponse: "" };
+      expect(await enregistrerMessagerie(chef, societe.id, boite, ctx)).toMatchObject({ ok: false });
+      expect(await enregistrerMessagerie(qhse, societe.id, { ...boite, motDePasse: "" }, ctx)).toEqual({ ok: false, erreur: "Saisissez le mot de passe de cette boîte." });
+      expect((await enregistrerMessagerie(qhse, societe.id, { ...boite, hote: "127.0.0.1" }, ctx)).ok).toBe(false);
+      expect(await enregistrerMessagerie(qhse, societe.id, boite, ctx)).toEqual({ ok: true, message: "Messagerie enregistrée" });
+
+      const p = await db.parametresSociete.findUniqueOrThrow({ where: { societeId: societe.id } });
+      expect(p.smtpUtilisateur).toBe(boite.emailEnvoi);
+      expect(p.smtpMotDePasse).toMatch(/^v1:/);
+      expect(p.smtpMotDePasse).not.toContain("Secret-Boite");
+      const journal = await db.journalAudit.findMany({ where: { societeId: societe.id, action: "parametres.messagerie" } });
+      expect(JSON.stringify(journal, (_, v) => (typeof v === "bigint" ? String(v) : v))).not.toContain("Secret-Boite");
+      expect(journal.at(-1)?.details).toMatchObject({ motDePasseModifie: true });
+
+      // Même boîte, mot de passe laissé vide : conservé ; adresse de réponse ajoutée.
+      expect((await enregistrerMessagerie(qhse, societe.id, { ...boite, motDePasse: "", emailReponse: "Qualite@Filiale.sn" }, ctx)).ok).toBe(true);
+      const p2 = await db.parametresSociete.findUniqueOrThrow({ where: { societeId: societe.id } });
+      expect(p2.smtpMotDePasse).toBe(p.smtpMotDePasse);
+      expect(p2.emailReponse).toBe("qualite@filiale.sn");
+      const donnees = await donneesParametres(societe.id);
+      expect(donnees.messagerie).toMatchObject({ source: "parametres", emailEnvoi: boite.emailEnvoi, motDePasseEnregistre: true, motDePasseIllisible: false });
+      expect(JSON.stringify(donnees)).not.toContain("Secret-Boite");
+      expect(JSON.stringify(donnees)).not.toContain(p.smtpMotDePasse!);
+
+      // Autre adresse sans mot de passe : refusé (on n'envoie pas avec le mot de passe d'une autre boîte).
+      expect((await enregistrerMessagerie(qhse, societe.id, { ...boite, emailEnvoi: `autre-${suffixe}@filiale.sn`, motDePasse: "" }, ctx)).ok).toBe(false);
+      // Test d'envoi : réservé au QHSE.
+      expect(await testerMessagerie(chef, societe.id, ctx)).toMatchObject({ ok: false });
+
+      // Démonstration publique : bloquée.
+      process.env.DEMO_EN_LIGNE = "1";
+      if (process.env.MODE_DEMO === "1") expect((await enregistrerMessagerie(qhse, societe.id, boite, ctx)).ok).toBe(false);
+      delete process.env.DEMO_EN_LIGNE;
+
+      // Adresse vidée : boîte retirée.
+      expect(await enregistrerMessagerie(qhse, societe.id, { ...boite, emailEnvoi: "", motDePasse: "" }, ctx)).toEqual({ ok: true, message: "Boîte d'envoi retirée" });
+      const p3 = await db.parametresSociete.findUniqueOrThrow({ where: { societeId: societe.id } });
+      expect([p3.smtpUtilisateur, p3.smtpMotDePasse]).toEqual([null, null]);
+    } finally {
+      if (demo === undefined) delete process.env.DEMO_EN_LIGNE;
+      else process.env.DEMO_EN_LIGNE = demo;
+    }
   });
 
   it("activités : création (code unique), responsable et équipes", async () => {

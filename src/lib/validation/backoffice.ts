@@ -69,15 +69,30 @@ export const schemaModeles = z.object({
   modeleSms: modeleSansVariableInconnue(z.string().trim().min(10).max(160, { error: "Le SMS ne doit pas dépasser 160 caractères." })),
   modeleEmailObjet: modeleSansVariableInconnue(z.string().trim().min(3).max(150)),
   modeleEmail: modeleSansVariableInconnue(z.string().trim().min(10).max(3000)),
-  emailReponse: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .max(254)
-    .refine((v) => v === "" || z.email().safeParse(v).success, { error: "Adresse e-mail invalide." })
-    .transform((v) => v || null)
-    .default(""),
 });
+
+/** Serveur SMTP : un nom d'hôte public (pas d'adresse IP ni de nom local), ports chiffrés uniquement. */
+const HOTE = /^(?=.{4,253}$)(?!-)[a-z0-9-]{1,63}(?:\.[a-z0-9-]{1,63})+$/;
+
+export const schemaMessagerie = z
+  .object({
+    emailEnvoi: emailFacultatif.default(null),
+    motDePasse: z.string().max(200, { error: "Mot de passe trop long." }).default(""), // vide : inchangé
+    nomExpediteur: z
+      .string()
+      .trim()
+      .max(120)
+      .refine((v) => !/["<>\r\n]/.test(v), { error: "Évitez les guillemets et les chevrons." })
+      .default(""),
+    hote: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .refine((v) => HOTE.test(v) && !/^[0-9.]+$/.test(v) && !v.endsWith(".local") && v !== "localhost", { error: "Indiquez le nom du serveur, par exemple mail.infomaniak.com." })
+      .default("mail.infomaniak.com"),
+    port: z.coerce.number().refine((p) => p === 465 || p === 587, { error: "Port 465 (SSL) ou 587 (STARTTLS)." }).default(465),
+    emailReponse: emailFacultatif.default(null),
+  });
 
 export const schemaUtilisateur = z.object({
   nom: z.string().trim().min(2).max(120),

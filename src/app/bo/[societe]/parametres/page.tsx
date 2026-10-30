@@ -7,6 +7,7 @@ import { donneesParametres, personnesActivites } from "@/server/parametres";
 import { exigerSociete } from "@/server/session";
 import { OngletActivites } from "./onglet-activites";
 import { OngletDelais } from "./onglet-delais";
+import { OngletMessagerie } from "./onglet-messagerie";
 import { OngletModeles } from "./onglet-modeles";
 import { OngletUtilisateurs } from "./onglet-utilisateurs";
 import { Reinitialiser, ZoneParametres } from "./zone";
@@ -18,6 +19,7 @@ const ONGLETS = [
   { cle: "utilisateurs", libelle: "Utilisateurs et rôles" },
   { cle: "delais", libelle: "Délais cibles" },
   { cle: "modeles", libelle: "Modèles SMS et e-mail" },
+  { cle: "messagerie", libelle: "Messagerie" },
 ] as const;
 
 export default async function Parametres({ params, searchParams }: { params: Promise<{ societe: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -58,7 +60,8 @@ export default async function Parametres({ params, searchParams }: { params: Pro
           {onglet === "activites" && <OngletActivites slug={slug} societe={d.societe.nom} activites={d.activites} personnes={personnes} icones={d.icones} />}
           {onglet === "utilisateurs" && <OngletUtilisateurs slug={slug} utilisateurs={d.utilisateurs} moi={acteur.id} societe={d.societe.nom} />}
           {onglet === "delais" && <OngletDelais slug={slug} delais={d.delais} feries={d.feries} />}
-          {onglet === "modeles" && <OngletModeles slug={slug} modeles={d.modeles} delai={d.delais.delaiReponseJO} societe={d.societe.code} nomSociete={d.societe.nom} />}
+          {onglet === "modeles" && <OngletModeles slug={slug} modeles={d.modeles} delai={d.delais.delaiReponseJO} societe={d.societe.code} />}
+          {onglet === "messagerie" && <OngletMessagerie slug={slug} messagerie={d.messagerie} societe={d.societe.nom} />}
         </div>
       </section>
     </ZoneParametres>

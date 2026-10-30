@@ -6,7 +6,10 @@ import type { Prisma, Role } from "@/generated/prisma/client";
 import { aujourdhuiIso, estJourIso, formatDate, formatDateHeure } from "@/lib/dates";
 import { LIBELLE_ROLE } from "@/lib/libelles";
 import { erreursParChamp } from "@/lib/validation/communs";
-import { schemaDelais, schemaModeles } from "@/lib/validation/backoffice";
+import { schemaDelais, schemaMessagerie, schemaModeles } from "@/lib/validation/backoffice";
+import { modeDemo } from "./demo";
+import { chiffrer, dechiffrer } from "./messagerie/chiffrement";
+import { configurationPourSociete, configurationSmtp, fournisseurSmtp, verifierSmtp } from "./messagerie/smtp";
 import { db } from "./db";
 import { AccesRefuse, aLaPermission, peutAccederSociete, type Acteur } from "./droits/permissions";
 import { journaliser } from "./journal";
@@ -131,8 +134,8 @@ export async function donneesParametres(societeId: string) {
       modeleSms: parametres?.modeleSms ?? "",
       modeleEmailObjet: parametres?.modeleEmailObjet ?? "",
       modeleEmail: parametres?.modeleEmail ?? "",
-      emailReponse: parametres?.emailReponse ?? "",
     },
+    messagerie: etatMessagerie(societe.code, societe.nom, parametres),
     feries: feries.map((f) => ({ date: f.date.toISOString().slice(0, 10), affichage: formatDate(f.date), libelle: f.libelle })),
     icones,
   };
@@ -140,6 +143,103 @@ export async function donneesParametres(societeId: string) {
 export type DonneesParametres = Awaited<ReturnType<typeof donneesParametres>>;
 
 // ───────────────────────── Délais, jours fériés, modèles ─────────────────────────
+
+// ───────────────────────── Messagerie (boîte d'envoi de la filiale) ─────────────────────────
+
+type ParametresMessagerie = { smtpHote: string | null; smtpPort: number | null; smtpUtilisateur: string | null; smtpMotDePasse: string | null; emailNomExpediteur: string | null; emailReponse: string | null } | null;
+
+/** Ce que l'écran affiche : jamais le mot de passe, seulement s'il est enregistré et lisible. */
+function etatMessagerie(code: string, nomSociete: string, p: ParametresMessagerie) {
+  const motDePasseLisible = !!p?.smtpMotDePasse && dechiffrer(p.smtpMotDePasse) !== null;
+  const source: "parametres" | "serveur" | "aucune" = p?.smtpUtilisateur && motDePasseLisible ? "parametres" : configurationSmtp(code) ? "serveur" : "aucune";
+  return {
+    emailEnvoi: p?.smtpUtilisateur ?? "",
+    nomExpediteur: p?.emailNomExpediteur ?? `${nomSociete} – Réclamations`,
+    hote: p?.smtpHote ?? "mail.infomaniak.com",
+    port: p?.smtpPort ?? 465,
+    emailReponse: p?.emailReponse ?? "",
+    motDePasseEnregistre: !!p?.smtpMotDePasse,
+    motDePasseIllisible: !!p?.smtpMotDePasse && !motDePasseLisible,
+    source,
+    bloqueeDemo: demoPublique(),
+  };
+}
+
+/** Démonstration publique : aucune boîte réelle ne doit pouvoir être branchée ni testée par un visiteur. */
+const demoPublique = () => modeDemo() && process.env.DEMO_EN_LIGNE === "1";
+
+export function enregistrerMessagerie(acteur: Acteur, societeId: string, saisie: unknown, ctx: ContexteParametres) {
+  return executer(acteur, societeId, ctx, async (tx) => {
+    if (demoPublique()) throw new Refus("La messagerie ne se configure pas sur la démonstration publique.");
+    const m = schemaMessagerie.parse(saisie);
+    const actuel = await tx.parametresSociete.findUnique({ where: { societeId }, select: { smtpMotDePasse: true, smtpUtilisateur: true } });
+    if (m.emailEnvoi && !m.motDePasse && !(actuel?.smtpMotDePasse && actuel.smtpUtilisateur === m.emailEnvoi)) {
+      throw new Refus("Saisissez le mot de passe de cette boîte.");
+    }
+    const donnees = m.emailEnvoi
+      ? {
+          smtpUtilisateur: m.emailEnvoi,
+          smtpHote: m.hote,
+          smtpPort: m.port,
+          emailNomExpediteur: m.nomExpediteur || null,
+          ...(m.motDePasse ? { smtpMotDePasse: chiffrer(m.motDePasse) } : {}),
+          emailReponse: m.emailReponse,
+        }
+      : // Adresse vidée : la boîte est retirée (les e-mails repassent par la configuration du serveur, s'il y en a une).
+        { smtpUtilisateur: null, smtpHote: null, smtpPort: null, smtpMotDePasse: null, emailNomExpediteur: null, emailReponse: m.emailReponse };
+    await tx.parametresSociete.upsert({
+      where: { societeId },
+      update: { ...donnees, updatedById: acteur.id },
+      create: { societeId, ...VALEURS_PAR_DEFAUT_MODELES, ...donnees, updatedById: acteur.id },
+    });
+    // Le journal ne contient jamais le mot de passe, seulement le fait qu'il a changé.
+    const details = { emailEnvoi: m.emailEnvoi, hote: m.hote, port: m.port, nomExpediteur: m.nomExpediteur, emailReponse: m.emailReponse, motDePasseModifie: !!m.motDePasse };
+    return { message: m.emailEnvoi ? "Messagerie enregistrée" : "Boîte d'envoi retirée", action: "parametres.messagerie", entite: "ParametresSociete", entiteId: societeId, details };
+  });
+}
+
+/** Envoie un e-mail d'essai depuis la boîte de la filiale vers l'adresse du QHSE connecté. */
+export async function testerMessagerie(acteur: Acteur, societeId: string, ctx: ContexteParametres): Promise<ResultatParametres> {
+  try {
+    exigerQhse(acteur, societeId);
+    if (demoPublique()) return { ok: false, erreur: "L'envoi d'essai est désactivé sur la démonstration publique." };
+    const [societe, p, moi] = await Promise.all([
+      db.societe.findUniqueOrThrow({ where: { id: societeId }, select: { code: true, nom: true } }),
+      db.parametresSociete.findUnique({ where: { societeId }, select: { smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true, emailReponse: true } }),
+      db.user.findUniqueOrThrow({ where: { id: acteur.id }, select: { email: true } }),
+    ]);
+    const c = configurationPourSociete(societe.code, p);
+    if (!c) return { ok: false, erreur: "Aucune boîte d'envoi n'est configurée pour cette société." };
+    let resultat: ResultatParametres;
+    try {
+      await verifierSmtp(undefined, c);
+      await fournisseurSmtp().envoyer({
+        destinataire: moi.email,
+        objet: `Test — messagerie de ${societe.nom}`,
+        corps: `Bonjour,\n\nCet e-mail confirme que la plateforme de réclamations peut écrire aux clients de ${societe.nom} depuis la boîte ${c.utilisateur}.\n\nPlateforme réclamations — Groupe COSEMAD`,
+        smtp: c,
+        repondreA: p?.emailReponse,
+      });
+      resultat = { ok: true, message: `E-mail d'essai envoyé à ${moi.email}` };
+    } catch (e) {
+      resultat = { ok: false, erreur: `Envoi refusé par le serveur de messagerie : ${messageSmtp(e)}` };
+    }
+    await journaliser(db, { action: "parametres.messagerie.test", entite: "ParametresSociete", entiteId: societeId, userId: acteur.id, societeId, details: { ok: resultat.ok }, ip: ctx.ip, userAgent: ctx.userAgent });
+    return resultat;
+  } catch (e) {
+    if (e instanceof AccesRefuse) return { ok: false, erreur: e.message };
+    throw e;
+  }
+}
+
+/** Erreur SMTP lisible, sans jamais reprendre d'identifiant ni de mot de passe. */
+function messageSmtp(e: unknown): string {
+  const err = e as { code?: string; responseCode?: number; message?: string };
+  if (err.code === "EAUTH" || err.responseCode === 535) return "adresse ou mot de passe incorrect.";
+  if (err.code === "ETIMEDOUT" || err.code === "ECONNECTION" || err.code === "ESOCKET" || err.code === "ECONNREFUSED") return "serveur injoignable (nom du serveur ou port à vérifier).";
+  if (err.code === "EDNS" || err.code === "ENOTFOUND") return "serveur introuvable (vérifiez son nom).";
+  return (err.message ?? "erreur inconnue").slice(0, 200);
+}
 
 const VALEURS_PAR_DEFAUT_MODELES = { modeleSms: "Votre réclamation {numero} est bien reçue.", modeleEmailObjet: "Réclamation {numero}", modeleEmail: "Bonjour {nom}, votre réclamation {numero} est bien reçue." };
 
