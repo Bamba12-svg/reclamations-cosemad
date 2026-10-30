@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { Prisma, Role } from "@/generated/prisma/client";
 import { aujourdhuiIso, estJourIso, formatDate, formatDateHeure } from "@/lib/dates";
 import { LIBELLE_ROLE } from "@/lib/libelles";
-import { erreursParChamp } from "@/lib/validation/communs";
+import { emailFacultatif, erreursParChamp } from "@/lib/validation/communs";
 import { schemaDelais, schemaMessagerie, schemaModeles } from "@/lib/validation/backoffice";
 import { modeDemo } from "./demo";
 import { chiffrer, dechiffrer } from "./messagerie/chiffrement";
@@ -199,10 +199,12 @@ export function enregistrerMessagerie(acteur: Acteur, societeId: string, saisie:
 }
 
 /** Envoie un e-mail d'essai depuis la boîte de la filiale vers l'adresse du QHSE connecté. */
-export async function testerMessagerie(acteur: Acteur, societeId: string, ctx: ContexteParametres): Promise<ResultatParametres> {
+export async function testerMessagerie(acteur: Acteur, societeId: string, ctx: ContexteParametres, adresse = ""): Promise<ResultatParametres> {
   try {
     exigerQhse(acteur, societeId);
     if (demoPublique()) return { ok: false, erreur: "L'envoi d'essai est désactivé sur la démonstration publique." };
+    const choisie = emailFacultatif.safeParse(adresse);
+    if (!choisie.success) return { ok: false, erreur: "Adresse de test invalide.", champs: { adresseTest: "Adresse de test invalide." } };
     const [societe, p, moi] = await Promise.all([
       db.societe.findUniqueOrThrow({ where: { id: societeId }, select: { code: true, nom: true } }),
       db.parametresSociete.findUnique({ where: { societeId }, select: { smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true, emailReponse: true } }),
@@ -214,17 +216,17 @@ export async function testerMessagerie(acteur: Acteur, societeId: string, ctx: C
     try {
       await verifierSmtp(undefined, c);
       await fournisseurSmtp().envoyer({
-        destinataire: moi.email,
+        destinataire: choisie.data ?? moi.email,
         objet: `Test — messagerie de ${societe.nom}`,
         corps: `Bonjour,\n\nCet e-mail confirme que la plateforme de réclamations peut écrire aux clients de ${societe.nom} depuis la boîte ${c.utilisateur}.\n\nPlateforme réclamations — Groupe COSEMAD`,
         smtp: c,
         repondreA: p?.emailReponse,
       });
-      resultat = { ok: true, message: `E-mail d'essai envoyé à ${moi.email}` };
+      resultat = { ok: true, message: `E-mail d'essai envoyé à ${choisie.data ?? moi.email}` };
     } catch (e) {
       resultat = { ok: false, erreur: `Envoi refusé par le serveur de messagerie : ${messageSmtp(e)}` };
     }
-    await journaliser(db, { action: "parametres.messagerie.test", entite: "ParametresSociete", entiteId: societeId, userId: acteur.id, societeId, details: { ok: resultat.ok }, ip: ctx.ip, userAgent: ctx.userAgent });
+    await journaliser(db, { action: "parametres.messagerie.test", entite: "ParametresSociete", entiteId: societeId, userId: acteur.id, societeId, details: { ok: resultat.ok, destinataire: choisie.data ?? moi.email }, ip: ctx.ip, userAgent: ctx.userAgent });
     return resultat;
   } catch (e) {
     if (e instanceof AccesRefuse) return { ok: false, erreur: e.message };

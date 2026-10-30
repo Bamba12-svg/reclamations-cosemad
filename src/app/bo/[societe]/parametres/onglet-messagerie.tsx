@@ -25,6 +25,7 @@ const CHAMP = "min-h-11 rounded-champ border border-bord-fort bg-surface px-3.5 
 /** Boîte d'envoi de la filiale : le QHSE la saisit, la change et la teste sans toucher au serveur. */
 export function OngletMessagerie({ slug, societe, messagerie }: Props) {
   const [m, setM] = useState({ ...messagerie, motDePasse: "" });
+  const [adresseTest, setAdresseTest] = useState("");
   const [enCours, lancer] = useOperation();
   const bloquee = messagerie.bloqueeDemo;
   const memeBoite = m.emailEnvoi.trim().toLowerCase() === messagerie.emailEnvoi;
@@ -159,20 +160,48 @@ export function OngletMessagerie({ slug, societe, messagerie }: Props) {
         <p className="m-0 mt-3 text-[0.8125rem] text-encre-3">Infomaniak : mail.infomaniak.com, port 465. Microsoft 365 : smtp.office365.com, port 587.</p>
       </details>
 
-      <div className="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          disabled={enCours || bloquee || messagerie.source === "aucune"}
-          onClick={() => lancer(() => actionTesterMessagerie(slug))}
-          title={messagerie.source === "aucune" ? "Enregistrez d'abord une boîte d'envoi." : undefined}
-          className={BOUTON_SECONDAIRE}
-        >
-          M&apos;envoyer un e-mail de test
-        </button>
+      <div className="flex justify-end">
         <button type="button" disabled={enCours || bloquee} onClick={enregistrer} className={BOUTON_PRINCIPAL}>
           {enCours ? "Enregistrement…" : "Enregistrer"}
         </button>
       </div>
+
+      <div className="h-px bg-surface-3" />
+      <section aria-labelledby="titre-test-messagerie" className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h3 id="titre-test-messagerie" className="m-0 text-base">
+            Vérifier l&apos;envoi
+          </h3>
+          <p className="m-0 text-sm text-encre-3">Envoie un vrai e-mail depuis la boîte enregistrée. Enregistrez d&apos;abord vos modifications.</p>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex min-w-0 flex-[1_1_18rem] flex-col gap-1.5">
+            <label htmlFor="msg-test" className="font-semibold">
+              Adresse qui reçoit l&apos;e-mail de test
+            </label>
+            <input
+              id="msg-test"
+              type="email"
+              value={adresseTest}
+              maxLength={254}
+              autoComplete="email"
+              placeholder="Vide : l'adresse de votre compte"
+              disabled={bloquee}
+              onChange={(e) => setAdresseTest(e.target.value)}
+              className={CHAMP}
+            />
+          </div>
+          <button
+            type="button"
+            disabled={enCours || bloquee || messagerie.source === "aucune"}
+            onClick={() => lancer(() => actionTesterMessagerie(slug, adresseTest))}
+            title={messagerie.source === "aucune" ? "Enregistrez d'abord une boîte d'envoi." : undefined}
+            className={BOUTON_SECONDAIRE}
+          >
+            Envoyer un e-mail de test
+          </button>
+        </div>
+      </section>
     </>
   );
 }
