@@ -63,6 +63,10 @@ adresses e-mail `@cosemad.sn` ne changent pas.
 
 Adresses publiques : `/carrefour-medical`, `/sonerco`, `/fls` (portails), `/suivi` (lien des SMS), `/bo` (back-office).
 
+Le portail ne contient **aucun lien** vers le back-office (sauf en démonstration) : donnez aux collaborateurs l'adresse
+`https://reclamations.cosemad.sn/bo`, à mettre en favori. Chaque filiale peut ajouter sur son site un bouton
+« Faire une réclamation » vers son portail.
+
 ### Code
 
 Le dépôt GitHub étant privé, deux possibilités :

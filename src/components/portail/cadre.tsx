@@ -38,7 +38,11 @@ export function EnTetePortail({ slug, nom, logo }: { slug: string; nom: string; 
   );
 }
 
-export function PiedPortail({ slug, nom, telephone }: { slug: string; nom: string; telephone: string }) {
+/**
+ * Le portail est destiné aux clients : aucun lien vers le back-office en production. Les collaborateurs
+ * passent par leur adresse dédiée (/bo). Le lien reste affiché en démonstration, pour passer d'un côté à l'autre.
+ */
+export function PiedPortail({ slug, nom, telephone, lienCollaborateurs }: { slug: string; nom: string; telephone: string; lienCollaborateurs: boolean }) {
   return (
     <footer className="border-t border-bord bg-surface">
       <div className="mx-auto flex max-w-160 flex-wrap justify-between gap-x-6 gap-y-2 px-[clamp(1rem,4vw,1.5rem)] py-5 text-[0.8125rem] text-encre-3">
@@ -47,7 +51,7 @@ export function PiedPortail({ slug, nom, telephone }: { slug: string; nom: strin
             {telephone}
           </a>
         </span>
-        <Link href={`/bo/connexion?societe=${slug}`}>Espace collaborateurs</Link>
+        {lienCollaborateurs && <Link href={`/bo/connexion?societe=${slug}`}>Espace collaborateurs</Link>}
       </div>
     </footer>
   );

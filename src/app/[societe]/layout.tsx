@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { modeDemo } from "@/server/demo";
 import { societePortail } from "@/server/portail";
 import { EnTetePortail, PiedPortail } from "@/components/portail/cadre";
 
@@ -12,7 +13,7 @@ export default async function MiseEnPagePortail({ children, params }: { children
       <main id="contenu" className="mx-auto w-full max-w-160 flex-1 px-[clamp(1rem,4vw,1.5rem)] pt-[clamp(1.5rem,5vw,3rem)] pb-12">
         {children}
       </main>
-      <PiedPortail slug={societe.slug} nom={societe.nom} telephone={societe.telStandard} />
+      <PiedPortail slug={societe.slug} nom={societe.nom} telephone={societe.telStandard} lienCollaborateurs={modeDemo()} />
     </div>
   );
 }
