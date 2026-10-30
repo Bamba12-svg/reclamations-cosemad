@@ -188,7 +188,7 @@ Pour chaque filiale, le Service QHSE ouvre *Paramètres → Messagerie* et rense
 | Adresse d'envoi | `prenom.nom@carrefourmedical.sn` (une vraie boîte de la filiale) |
 | Mot de passe de cette boîte | celui de la boîte : enregistré **chiffré**, jamais réaffiché ni journalisé |
 | Nom affiché au client | `Carrefour Médical – Réclamations` |
-| Adresse de la filiale pour les réclamations | reçoit un e-mail à **chaque nouvelle réclamation** (numéro, client, description, lien vers la fiche) et les réponses des clients ; vide : la boîte d'envoi |
+| Adresses de la filiale pour les réclamations | une ou plusieurs (bouton « Ajouter une adresse ») : chacune reçoit un e-mail à **chaque nouvelle réclamation** (numéro, client, description, lien vers la fiche) et les réponses des clients ; aucune : la boîte d'envoi |
 | Serveur SMTP / port | `mail.infomaniak.com` / 465 par défaut |
 
 Le lien vers la fiche utilise `URL_PUBLIQUE` du `.env` (par défaut `https://reclamations.cosemad.sn`).

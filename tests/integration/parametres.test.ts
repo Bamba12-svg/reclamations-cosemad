@@ -126,7 +126,7 @@ describe("paramètres QHSE (base réelle)", () => {
     const demo = process.env.DEMO_EN_LIGNE;
     delete process.env.DEMO_EN_LIGNE;
     try {
-      const boite = { emailEnvoi: `envoi-${suffixe}@filiale.sn`, motDePasse: "Secret-Boite-2026", nomExpediteur: "Filiale – Réclamations", hote: "mail.infomaniak.com", port: 465, emailReponse: "" };
+      const boite = { emailEnvoi: `envoi-${suffixe}@filiale.sn`, motDePasse: "Secret-Boite-2026", nomExpediteur: "Filiale – Réclamations", hote: "mail.infomaniak.com", port: 465, emailsReclamations: [] };
       expect(await enregistrerMessagerie(chef, societe.id, boite, ctx)).toMatchObject({ ok: false });
       expect(await enregistrerMessagerie(qhse, societe.id, { ...boite, motDePasse: "" }, ctx)).toEqual({ ok: false, erreur: "Saisissez le mot de passe de cette boîte." });
       expect((await enregistrerMessagerie(qhse, societe.id, { ...boite, hote: "127.0.0.1" }, ctx)).ok).toBe(false);
@@ -141,10 +141,11 @@ describe("paramètres QHSE (base réelle)", () => {
       expect(journal.at(-1)?.details).toMatchObject({ motDePasseModifie: true });
 
       // Même boîte, mot de passe laissé vide : conservé ; adresse de réponse ajoutée.
-      expect((await enregistrerMessagerie(qhse, societe.id, { ...boite, motDePasse: "", emailReponse: "Qualite@Filiale.sn" }, ctx)).ok).toBe(true);
+      expect((await enregistrerMessagerie(qhse, societe.id, { ...boite, motDePasse: "", emailsReclamations: ["Qualite@Filiale.sn", " chef@filiale.sn ", "qualite@filiale.sn", ""] }, ctx)).ok).toBe(true);
       const p2 = await db.parametresSociete.findUniqueOrThrow({ where: { societeId: societe.id } });
       expect(p2.smtpMotDePasse).toBe(p.smtpMotDePasse);
-      expect(p2.emailReponse).toBe("qualite@filiale.sn");
+      expect(p2.emailsReclamations).toEqual(["qualite@filiale.sn", "chef@filiale.sn"]); // nettoyées, sans doublon
+      expect(await enregistrerMessagerie(qhse, societe.id, { ...boite, motDePasse: "", emailsReclamations: ["ok@filiale.sn", "pas-une-adresse"] }, ctx)).toMatchObject({ ok: false, erreur: "Adresse invalide : pas-une-adresse" });
       const donnees = await donneesParametres(societe.id);
       expect(donnees.messagerie).toMatchObject({ source: "parametres", emailEnvoi: boite.emailEnvoi, motDePasseEnregistre: true, motDePasseIllisible: false });
       expect(JSON.stringify(donnees)).not.toContain("Secret-Boite");

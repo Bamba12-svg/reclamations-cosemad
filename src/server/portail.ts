@@ -134,7 +134,7 @@ export async function deposerReclamation(d: DepotPortail, fichiers: FichierRecu[
         messages.push(await preparerMessage(tx, { societeId: societe.id, reclamationId: r.id, canal: "EMAIL", destinataire: d.email, objet, corps: email }));
       }
       await ajouterEvenement(tx, r.id, `Confirmation envoyée au client (SMS${email ? " + e-mail" : ""})`, "Système", maintenant);
-      const alerte = await alerterNouvelleReclamation(tx, {
+      const alertes = await alerterNouvelleReclamation(tx, {
         societe: { id: societe.id, nom: societe.nom, slug: societe.slug },
         parametres,
         reclamationId: r.id,
@@ -148,7 +148,7 @@ export async function deposerReclamation(d: DepotPortail, fichiers: FichierRecu[
         description: d.description,
         piecesJointes: pieces.length,
       });
-      if (alerte) messages.push(alerte);
+      messages.push(...alertes);
       await journaliser(tx, {
         action: "reclamation.deposer",
         entite: "Reclamation",

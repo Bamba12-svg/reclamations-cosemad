@@ -52,7 +52,7 @@ export async function expedier(db: PrismaClient, messageIds: readonly string[]):
       societe: {
         select: {
           code: true,
-          parametres: { select: { emailReponse: true, smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true } },
+          parametres: { select: { emailsReclamations: true, smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true } },
         },
       },
     },
@@ -66,7 +66,7 @@ export async function expedier(db: PrismaClient, messageIds: readonly string[]):
         objet: m.objet,
         corps: m.corps,
         societeCode: m.societe.code,
-        repondreA: m.interne ? null : m.societe.parametres?.emailReponse,
+        repondreA: m.interne ? null : m.societe.parametres?.emailsReclamations.join(", ") || null,
         smtp: m.canal === "EMAIL" ? configurationPourSociete(m.societe.code, m.societe.parametres) : null,
       });
       await db.message.update({ where: { id: m.id }, data: { statut: "ENVOYE", envoyeLe: new Date(), idExterne: idExterne ?? null } });

@@ -85,8 +85,8 @@ describe("portail : dépôt puis suivi (base réelle)", () => {
     expect(await db.journalAudit.count({ where: { entiteId: enBase.id, action: "reclamation.deposer" } })).toBe(1);
   });
 
-  it("prévient la filiale par e-mail de chaque nouvelle réclamation (alerte interne, jamais montrée au client)", async () => {
-    await db.parametresSociete.update({ where: { societeId: societe.id }, data: { emailReponse: "qualite@test.sn" } });
+  it("prévient chaque adresse de la filiale de chaque nouvelle réclamation (alerte interne, jamais montrée au client)", async () => {
+    await db.parametresSociete.update({ where: { societeId: societe.id }, data: { emailsReclamations: ["qualite@test.sn", "chef@test.sn"] } });
     process.env.URL_PUBLIQUE = "https://reclamations.cosemad.sn/";
     try {
       const r = await deposerReclamation(depot({ description: "Livreur arrivé avec <b>deux</b> jours de retard." }), [], { ip: null, userAgent: null });
@@ -97,6 +97,7 @@ describe("portail : dépôt puis suivi (base réelle)", () => {
         "SMS:client:+221774123508",
         "EMAIL:client:awa@test.sn",
         "EMAIL:interne:qualite@test.sn",
+        "EMAIL:interne:chef@test.sn",
       ]);
       const alerte = messages[2]!;
       expect(alerte.objet).toBe(`Nouvelle réclamation ${r.numero} · Test Livraison`);
@@ -108,7 +109,7 @@ describe("portail : dépôt puis suivi (base réelle)", () => {
       expect(r.messages?.email).not.toContain("Nouvelle réclamation");
     } finally {
       delete process.env.URL_PUBLIQUE;
-      await db.parametresSociete.update({ where: { societeId: societe.id }, data: { emailReponse: null } });
+      await db.parametresSociete.update({ where: { societeId: societe.id }, data: { emailsReclamations: [] } });
     }
   });
 

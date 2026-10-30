@@ -146,7 +146,7 @@ export type DonneesParametres = Awaited<ReturnType<typeof donneesParametres>>;
 
 // ───────────────────────── Messagerie (boîte d'envoi de la filiale) ─────────────────────────
 
-type ParametresMessagerie = { smtpHote: string | null; smtpPort: number | null; smtpUtilisateur: string | null; smtpMotDePasse: string | null; emailNomExpediteur: string | null; emailReponse: string | null } | null;
+type ParametresMessagerie = { smtpHote: string | null; smtpPort: number | null; smtpUtilisateur: string | null; smtpMotDePasse: string | null; emailNomExpediteur: string | null; emailsReclamations: string[] } | null;
 
 /** Ce que l'écran affiche : jamais le mot de passe, seulement s'il est enregistré et lisible. */
 function etatMessagerie(code: string, nomSociete: string, p: ParametresMessagerie) {
@@ -157,7 +157,7 @@ function etatMessagerie(code: string, nomSociete: string, p: ParametresMessageri
     nomExpediteur: p?.emailNomExpediteur ?? `${nomSociete} – Réclamations`,
     hote: p?.smtpHote ?? "mail.infomaniak.com",
     port: p?.smtpPort ?? 465,
-    emailReponse: p?.emailReponse ?? "",
+    emailsReclamations: p?.emailsReclamations ?? [],
     motDePasseEnregistre: !!p?.smtpMotDePasse,
     motDePasseIllisible: !!p?.smtpMotDePasse && !motDePasseLisible,
     source,
@@ -183,17 +183,17 @@ export function enregistrerMessagerie(acteur: Acteur, societeId: string, saisie:
           smtpPort: m.port,
           emailNomExpediteur: m.nomExpediteur || null,
           ...(m.motDePasse ? { smtpMotDePasse: chiffrer(m.motDePasse) } : {}),
-          emailReponse: m.emailReponse,
+          emailsReclamations: m.emailsReclamations,
         }
       : // Adresse vidée : la boîte est retirée (les e-mails repassent par la configuration du serveur, s'il y en a une).
-        { smtpUtilisateur: null, smtpHote: null, smtpPort: null, smtpMotDePasse: null, emailNomExpediteur: null, emailReponse: m.emailReponse };
+        { smtpUtilisateur: null, smtpHote: null, smtpPort: null, smtpMotDePasse: null, emailNomExpediteur: null, emailsReclamations: m.emailsReclamations };
     await tx.parametresSociete.upsert({
       where: { societeId },
       update: { ...donnees, updatedById: acteur.id },
       create: { societeId, ...VALEURS_PAR_DEFAUT_MODELES, ...donnees, updatedById: acteur.id },
     });
     // Le journal ne contient jamais le mot de passe, seulement le fait qu'il a changé.
-    const details = { emailEnvoi: m.emailEnvoi, hote: m.hote, port: m.port, nomExpediteur: m.nomExpediteur, emailReponse: m.emailReponse, motDePasseModifie: !!m.motDePasse };
+    const details = { emailEnvoi: m.emailEnvoi, hote: m.hote, port: m.port, nomExpediteur: m.nomExpediteur, emailsReclamations: m.emailsReclamations, motDePasseModifie: !!m.motDePasse };
     return { message: m.emailEnvoi ? "Messagerie enregistrée" : "Boîte d'envoi retirée", action: "parametres.messagerie", entite: "ParametresSociete", entiteId: societeId, details };
   });
 }
@@ -207,7 +207,7 @@ export async function testerMessagerie(acteur: Acteur, societeId: string, ctx: C
     if (!choisie.success) return { ok: false, erreur: "Adresse de test invalide.", champs: { adresseTest: "Adresse de test invalide." } };
     const [societe, p, moi] = await Promise.all([
       db.societe.findUniqueOrThrow({ where: { id: societeId }, select: { code: true, nom: true } }),
-      db.parametresSociete.findUnique({ where: { societeId }, select: { smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true, emailReponse: true } }),
+      db.parametresSociete.findUnique({ where: { societeId }, select: { smtpHote: true, smtpPort: true, smtpUtilisateur: true, smtpMotDePasse: true, emailNomExpediteur: true, emailsReclamations: true } }),
       db.user.findUniqueOrThrow({ where: { id: acteur.id }, select: { email: true } }),
     ]);
     const c = configurationPourSociete(societe.code, p);
@@ -220,7 +220,7 @@ export async function testerMessagerie(acteur: Acteur, societeId: string, ctx: C
         objet: `Test — messagerie de ${societe.nom}`,
         corps: `Bonjour,\n\nCet e-mail confirme que la plateforme de réclamations peut écrire aux clients de ${societe.nom} depuis la boîte ${c.utilisateur}.\n\nPlateforme réclamations — Groupe COSEMAD`,
         smtp: c,
-        repondreA: p?.emailReponse,
+        repondreA: p?.emailsReclamations.join(", ") || null,
       });
       resultat = { ok: true, message: `E-mail d'essai envoyé à ${choisie.data ?? moi.email}` };
     } catch (e) {

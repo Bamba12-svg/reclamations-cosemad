@@ -12,7 +12,7 @@ import { preparerMessage } from "./index";
  */
 export interface NouvelleReclamation {
   societe: { id: string; nom: string; slug: string };
-  parametres: { emailReponse: string | null; smtpUtilisateur: string | null } | null;
+  parametres: { emailsReclamations: string[]; smtpUtilisateur: string | null } | null;
   reclamationId: string;
   numero: string;
   recueLe: Date;
@@ -25,8 +25,10 @@ export interface NouvelleReclamation {
   piecesJointes: number;
 }
 
-export function adresseReclamations(p: NouvelleReclamation["parametres"]): string | null {
-  return p?.emailReponse || p?.smtpUtilisateur || null;
+/** Les adresses de la filiale pour les réclamations, sinon sa boîte d'envoi. */
+export function adressesReclamations(p: NouvelleReclamation["parametres"]): string[] {
+  if (p?.emailsReclamations.length) return p.emailsReclamations;
+  return p?.smtpUtilisateur ? [p.smtpUtilisateur] : [];
 }
 
 /** Adresse publique de l'application, pour le lien vers la fiche. */
@@ -35,9 +37,10 @@ export function urlPublique(): string {
   return brut.replace(/\/+$/, "");
 }
 
-export async function alerterNouvelleReclamation(tx: Pick<Prisma.TransactionClient, "message">, r: NouvelleReclamation): Promise<Message | null> {
-  const destinataire = adresseReclamations(r.parametres);
-  if (!destinataire) return null;
+/** Un message par destinataire : chaque envoi a son propre statut (envoyé, échec). */
+export async function alerterNouvelleReclamation(tx: Pick<Prisma.TransactionClient, "message">, r: NouvelleReclamation): Promise<Message[]> {
+  const destinataires = adressesReclamations(r.parametres);
+  if (!destinataires.length) return [];
   const lignes = [
     `Nouvelle réclamation reçue pour ${r.societe.nom}.`,
     "",
@@ -55,13 +58,19 @@ export async function alerterNouvelleReclamation(tx: Pick<Prisma.TransactionClie
     "",
     "Message automatique de la plateforme réclamations. Répondez au client depuis la fiche, pour que la réponse soit tracée.",
   ].filter((l) => l !== null);
-  return preparerMessage(tx, {
-    societeId: r.societe.id,
-    reclamationId: r.reclamationId,
-    canal: "EMAIL",
-    destinataire,
-    objet: `Nouvelle réclamation ${r.numero} · ${r.activite}`,
-    corps: lignes.join("\n"),
-    interne: true,
-  });
+  const messages: Message[] = [];
+  for (const destinataire of destinataires) {
+    messages.push(
+      await preparerMessage(tx, {
+        societeId: r.societe.id,
+        reclamationId: r.reclamationId,
+        canal: "EMAIL",
+        destinataire,
+        objet: `Nouvelle réclamation ${r.numero} · ${r.activite}`,
+        corps: lignes.join("\n"),
+        interne: true,
+      }),
+    );
+  }
+  return messages;
 }

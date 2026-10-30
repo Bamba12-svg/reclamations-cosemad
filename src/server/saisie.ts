@@ -137,7 +137,7 @@ export async function saisirReclamation(
       }
       await ajouterEvenement(tx, r.id, `Confirmation envoyée au client (SMS${messages.length > 1 ? " + e-mail" : ""})`, "Système", maintenant);
       if (responsable) await ajouterEvenement(tx, r.id, `Affectée à ${responsable.nom} (${activite.nom})`, qui, maintenant);
-      const alerte = await alerterNouvelleReclamation(tx, {
+      const alertes = await alerterNouvelleReclamation(tx, {
         societe: { id: societe.id, nom: societe.nom, slug: societe.slug },
         parametres,
         reclamationId: r.id,
@@ -151,7 +151,7 @@ export async function saisirReclamation(
         description: d.description,
         piecesJointes: pieces.length,
       });
-      if (alerte) messages.push(alerte);
+      messages.push(...alertes);
       await journaliser(tx, {
         action: "reclamation.saisir",
         entite: "Reclamation",

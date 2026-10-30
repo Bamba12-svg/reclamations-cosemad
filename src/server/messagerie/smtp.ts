@@ -41,7 +41,7 @@ export interface ParametresBoite {
   smtpUtilisateur: string | null;
   smtpMotDePasse: string | null; // chiffré
   emailNomExpediteur: string | null;
-  emailReponse?: string | null;
+  emailsReclamations?: string[];
 }
 
 export function configurationDepuisParametres(p: ParametresBoite | null | undefined, cle: string): ConfigurationSmtp | null {
@@ -58,7 +58,7 @@ export function configurationDepuisParametres(p: ParametresBoite | null | undefi
     utilisateur: p.smtpUtilisateur,
     motDePasse,
     expediteur: nom ? `"${nom}" <${p.smtpUtilisateur}>` : p.smtpUtilisateur,
-    reponse: p.emailReponse || undefined,
+    reponse: p.emailsReclamations?.length ? p.emailsReclamations.join(", ") : undefined,
   };
 }
 

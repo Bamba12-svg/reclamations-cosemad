@@ -104,7 +104,7 @@ model ParametresSociete {
   modeleSms           String   @db.VarChar(160)
   modeleEmailObjet    String   @db.VarChar(150)
   modeleEmail         String   @db.Text
-  emailReponse        String?  @db.VarChar(254) // reçoit les réponses des clients (Répondre) ; vide : la boîte d'envoi
+  emailsReclamations  String[] @default([]) // prévenues de chaque nouvelle réclamation, reçoivent les réponses des clients ; vide : la boîte d'envoi
   // Boîte d'envoi des e-mails de la filiale (Paramètres → Messagerie). Mot de passe chiffré (AES-256-GCM).
   smtpHote            String?  @db.VarChar(255)
   smtpPort            Int?

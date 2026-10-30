@@ -58,8 +58,8 @@ describe("fournisseur e-mail SMTP", () => {
   });
 
   it("Paramètres → Messagerie : saisie contrôlée (adresse, serveur public, ports chiffrés)", () => {
-    const ok = schemaMessagerie.parse({ emailEnvoi: " Awa.Ba@CarrefourMedical.sn ", motDePasse: "x", nomExpediteur: "Carrefour Médical", hote: "Mail.Infomaniak.com", port: "465", emailReponse: "" });
-    expect(ok).toEqual({ emailEnvoi: "awa.ba@carrefourmedical.sn", motDePasse: "x", nomExpediteur: "Carrefour Médical", hote: "mail.infomaniak.com", port: 465, emailReponse: null });
+    const ok = schemaMessagerie.parse({ emailEnvoi: " Awa.Ba@CarrefourMedical.sn ", motDePasse: "x", nomExpediteur: "Carrefour Médical", hote: "Mail.Infomaniak.com", port: "465", emailsReclamations: ["", "Qualite@CarrefourMedical.sn"] });
+    expect(ok).toEqual({ emailEnvoi: "awa.ba@carrefourmedical.sn", motDePasse: "x", nomExpediteur: "Carrefour Médical", hote: "mail.infomaniak.com", port: 465, emailsReclamations: ["qualite@carrefourmedical.sn"] });
     expect(schemaMessagerie.parse({ emailEnvoi: "" }).emailEnvoi).toBeNull();
     for (const hote of ["localhost", "127.0.0.1", "10.0.0.5", "serveur.local", "mail"]) expect(schemaMessagerie.safeParse({ emailEnvoi: "a@b.sn", hote }).success).toBe(false);
     expect(schemaMessagerie.safeParse({ emailEnvoi: "a@b.sn", port: 25 }).success).toBe(false);
@@ -72,8 +72,8 @@ describe("fournisseur e-mail SMTP", () => {
     const chiffre = chiffrer("MotDePasse-CM-2026");
     expect(chiffre).not.toContain("MotDePasse");
     expect(dechiffrer(chiffre)).toBe("MotDePasse-CM-2026");
-    const p = { smtpHote: "mail.infomaniak.com", smtpPort: 465, smtpUtilisateur: "awa.ba@carrefourmedical.sn", smtpMotDePasse: chiffre, emailNomExpediteur: "Carrefour Médical – Réclamations", emailReponse: "qualite@carrefourmedical.sn" };
-    expect(configurationPourSociete("CM", p)).toMatchObject({ utilisateur: "awa.ba@carrefourmedical.sn", motDePasse: "MotDePasse-CM-2026", expediteur: '"Carrefour Médical – Réclamations" <awa.ba@carrefourmedical.sn>', reponse: "qualite@carrefourmedical.sn" });
+    const p = { smtpHote: "mail.infomaniak.com", smtpPort: 465, smtpUtilisateur: "awa.ba@carrefourmedical.sn", smtpMotDePasse: chiffre, emailNomExpediteur: "Carrefour Médical – Réclamations", emailsReclamations: ["qualite@carrefourmedical.sn", "chef@carrefourmedical.sn"] };
+    expect(configurationPourSociete("CM", p)).toMatchObject({ utilisateur: "awa.ba@carrefourmedical.sn", motDePasse: "MotDePasse-CM-2026", expediteur: '"Carrefour Médical – Réclamations" <awa.ba@carrefourmedical.sn>', reponse: "qualite@carrefourmedical.sn, chef@carrefourmedical.sn" });
     expect(configurationPourSociete("CM", null)?.utilisateur).toBe("contact@cosemad.sn"); // rien dans les Paramètres : .env
     // Valeur altérée ou clé changée : illisible, jamais un mot de passe faux envoyé au serveur.
     expect(dechiffrer(chiffre.slice(0, -4) + "AAAA")).toBeNull();

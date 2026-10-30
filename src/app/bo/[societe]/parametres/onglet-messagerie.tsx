@@ -12,7 +12,7 @@ interface Props {
     nomExpediteur: string;
     hote: string;
     port: number;
-    emailReponse: string;
+    emailsReclamations: string[];
     motDePasseEnregistre: boolean;
     motDePasseIllisible: boolean;
     source: "parametres" | "serveur" | "aucune";
@@ -38,7 +38,7 @@ export function OngletMessagerie({ slug, societe, messagerie }: Props) {
   }[messagerie.source];
 
   const enregistrer = () =>
-    lancer(() => actionMessagerie(slug, { emailEnvoi: m.emailEnvoi, motDePasse: m.motDePasse, nomExpediteur: m.nomExpediteur, hote: m.hote, port: m.port, emailReponse: m.emailReponse }), {
+    lancer(() => actionMessagerie(slug, { emailEnvoi: m.emailEnvoi, motDePasse: m.motDePasse, nomExpediteur: m.nomExpediteur, hote: m.hote, port: m.port, emailsReclamations: m.emailsReclamations }), {
       reussite: () => setM((x) => ({ ...x, motDePasse: "" })),
     });
 
@@ -116,27 +116,49 @@ export function OngletMessagerie({ slug, societe, messagerie }: Props) {
             className={CHAMP}
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="msg-reponse" className="font-semibold">
-            Adresse de la filiale pour les réclamations
-          </label>
-          <input
-            id="msg-reponse"
-            type="email"
-            value={m.emailReponse}
-            maxLength={254}
-            autoComplete="off"
-            placeholder="Vide : la boîte d'envoi"
-            disabled={bloquee}
-            aria-describedby="msg-reponse-aide"
-            onChange={(e) => setM({ ...m, emailReponse: e.target.value })}
-            className={CHAMP}
-          />
-          <p id="msg-reponse-aide" className="m-0 text-[0.8125rem] text-encre-3">
-            Reçoit un e-mail à chaque nouvelle réclamation, ainsi que les réponses des clients. Vide : la boîte d&apos;envoi.
-          </p>
-        </div>
       </div>
+
+      <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0" aria-describedby="msg-filiale-aide">
+        <legend className="mb-1 p-0 font-semibold">Adresses de la filiale pour les réclamations</legend>
+        <p id="msg-filiale-aide" className="m-0 text-[0.8125rem] text-encre-3">
+          Chaque adresse reçoit un e-mail à chaque nouvelle réclamation, ainsi que les réponses des clients. Aucune adresse : la boîte d&apos;envoi.
+        </p>
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {m.emailsReclamations.map((adresse, i) => (
+            <li key={i} className="flex gap-2">
+              <input
+                type="email"
+                value={adresse}
+                maxLength={254}
+                autoComplete="off"
+                placeholder="prenom.nom@filiale.sn"
+                aria-label={`Adresse ${i + 1}`}
+                disabled={bloquee}
+                onChange={(e) => setM({ ...m, emailsReclamations: m.emailsReclamations.map((a, k) => (k === i ? e.target.value : a)) })}
+                className={`${CHAMP} min-w-0 flex-1`}
+              />
+              <button
+                type="button"
+                disabled={bloquee}
+                onClick={() => setM({ ...m, emailsReclamations: m.emailsReclamations.filter((_, k) => k !== i) })}
+                className={BOUTON_SECONDAIRE}
+              >
+                Retirer<span className="sr-only"> l&apos;adresse {i + 1}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {m.emailsReclamations.length < 10 && (
+          <button
+            type="button"
+            disabled={bloquee}
+            onClick={() => setM({ ...m, emailsReclamations: [...m.emailsReclamations, ""] })}
+            className={`${BOUTON_SECONDAIRE} self-start`}
+          >
+            Ajouter une adresse
+          </button>
+        )}
+      </fieldset>
 
       <details className="rounded-champ border border-bord px-4 py-3">
         <summary className="cursor-pointer font-semibold text-encre-2">Serveur de messagerie (Infomaniak par défaut)</summary>

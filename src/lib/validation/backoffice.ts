@@ -91,7 +91,15 @@ export const schemaMessagerie = z
       .refine((v) => HOTE.test(v) && !/^[0-9.]+$/.test(v) && !v.endsWith(".local") && v !== "localhost", { error: "Indiquez le nom du serveur, par exemple mail.infomaniak.com." })
       .default("mail.infomaniak.com"),
     port: z.coerce.number().refine((p) => p === 465 || p === 587, { error: "Port 465 (SSL) ou 587 (STARTTLS)." }).default(465),
-    emailReponse: emailFacultatif.default(null),
+    emailsReclamations: z
+      .array(z.string().max(254))
+      .max(10, { error: "10 adresses au maximum." })
+      .default([])
+      .transform((liste) => [...new Set(liste.map((a) => a.trim().toLowerCase()).filter(Boolean))])
+      .superRefine((liste, ctx) => {
+        const fausse = liste.find((a) => !z.email().safeParse(a).success);
+        if (fausse) ctx.addIssue({ code: "custom", message: `Adresse invalide : ${fausse}` });
+      }),
   });
 
 export const schemaUtilisateur = z.object({
